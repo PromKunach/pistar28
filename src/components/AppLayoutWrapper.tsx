@@ -13,7 +13,7 @@ export default function AppLayoutWrapper({
   const [desktopCollapsed, setDesktopCollapsed] = useState(false); // desktop rail collapse
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-white text-slate-900">
+    <div className="flex h-dvh w-full overflow-hidden bg-white text-slate-900">
       <Sidebar
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
