@@ -136,7 +136,7 @@ export default function Sidebar({
         </div>
 
         {/* Nav sections */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 font-sans">
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 font-sans">
           {NAV_SECTIONS.map((section, i) => (
             <div key={i} className={i === 0 ? "" : "mt-5"}>
               {section.title && (
