@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
+    "@radix-ui/react-label": "^2.1.15",
     "@supabase/supabase-js": "^2.112.2",
+    "@tabler/icons-react": "^3.46.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.30.0",

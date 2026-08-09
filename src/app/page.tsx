@@ -70,7 +70,7 @@ export default function DashboardPage() {
              <DiaTextReveal className="font-medium dark:text-white"
     repeat
     repeatDelay={2}
-    text={[ "สถาบันพระบรมราชชนก","PBRI", "PIMD30","PI*28"]}
+    text={[ "สถาบันพระบรมราชชนก", "PIMD30","PI*28"]}
   />
            
           </h2>
@@ -87,7 +87,7 @@ export default function DashboardPage() {
       
       
       
-      <div className="mb-18 mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-12 mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
         <Search className="h-4 w-4 shrink-0 text-slate-400" />
         <input
           type="text"

@@ -1,17 +1,20 @@
 "use client";
-
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
-
+const NO_LAYOUT_ROUTES = ["/login", "/onboarding"];
 export default function AppLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false); // mobile drawer
   const [desktopCollapsed, setDesktopCollapsed] = useState(false); // desktop rail collapse
-
+  if (NO_LAYOUT_ROUTES.includes(pathname)) {
+    return <>{children}</>;
+  }
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-white text-slate-900">
       <Sidebar

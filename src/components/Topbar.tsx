@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { Sparkles, HelpCircle, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button"
@@ -21,7 +22,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
 
       <div className="ml-auto flex items-center gap-4 sm:gap-6">
        
-         <a href="#" className={buttonVariants({ variant: "secondary", size: "sm" })}>เข้าสู่ระบบ</a>
+         <Link href="/login" className={buttonVariants({ variant: "secondary", size: "sm" })}>เข้าสู่ระบบ</Link>
 
         <button aria-label="Account">
           <User className="h-5 w-5 text-slate-500" />
