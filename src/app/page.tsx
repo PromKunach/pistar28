@@ -7,9 +7,19 @@ import { DiaTextReveal } from "@/components/ui/dia-text-reveal"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Marquee } from "@/components/ui/marquee"
 import { Separator } from "@/components/ui/separator"
+import { supabase } from "@/lib/supabaseClient";
+
+// Generates pfp_1.JPG ... pfp_32.JPG public URLs from the "images" bucket, "pfp/" folder
+const PFP_COUNT = 32;
+const pfpImages = Array.from({ length: PFP_COUNT }, (_, i) => {
+  const filename = `pfp_${i + 1}.JPG`;
+  const { data } = supabase.storage.from("images").getPublicUrl(`images/pfp/${filename}`);
+  return { filename, url: data.publicUrl };
+});
+
 export default function DashboardPage() {
   return (
-    <div className="mx-auto max-w-10xl px-4 py-10 sm:px-6 sm:py-16">
+    <div className="mx-auto max-w-10xl py-10  sm:py-16">
       
       {/* Onboarding pill */}
       <div className="flex justify-center">
@@ -81,7 +91,7 @@ export default function DashboardPage() {
         <Search className="h-4 w-4 shrink-0 text-slate-400" />
         <input
           type="text"
-          placeholder="Search"
+          placeholder="ลองพิมพ์ชื่อเล่นคนที่คุณกำลังมองหา"
           className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
         />
         <kbd className="hidden shrink-0 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:block">
@@ -92,22 +102,24 @@ export default function DashboardPage() {
         </kbd>
       </div>
      
-<Marquee className="[--duration:5s]">
-  <div className=" bg-red-200 rounded-[48px] w-24 h-24">
-
-  </div>
-  <div className="w-24 h-24 bg-neutral-200 rounded-[48px]">
-
-  </div>
-  <div className="w-24 h-24 bg-blue-200 rounded-[48px]">
-
-  </div>
-  <div className="w-24 h-24 bg-green-200 rounded-[48px]">
-
-  </div>
-  
+<Marquee className="[--duration:60s]">
+  {pfpImages.map((img) => (
+    <div
+      key={img.filename}
+      className="card mx-2 h-24 w-24 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white"
+    >
+      <Image
+        src={img.url}
+        alt={img.filename}
+        width={96}
+        height={96}
+        className="h-full w-full object-cover"
+      />
+    </div>
+  ))}
 </Marquee>
-      {/* Card grid */}
+
+      {/* Card grid 
       <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
         <ActionCard
           title="Ship something new"
@@ -129,6 +141,8 @@ export default function DashboardPage() {
           variant="lock"
         />
       </div>
+      */}
     </div>
+    
   );
 }

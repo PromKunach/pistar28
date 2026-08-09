@@ -13,7 +13,7 @@ import {
 
 import { cn } from "@/lib/utils"
 
-const DEFAULT_COLORS = ["#c679c4", "#fa3d1d", "#ffb005", "#e1e1fe", "#0358f7"]
+const DEFAULT_COLORS = ["#c679c4", "#f5e9b2", "#ffb005", "#e1e1fe", "#0358f7"]
 const BAND_HALF = 17
 const SWEEP_START = -BAND_HALF
 const SWEEP_END = 100 + BAND_HALF

@@ -177,7 +177,9 @@
 }
 
 .card {
-  border-radius: 12px;
-  height: 5rem;
-  width: 24px;
+  border-radius: 48px;
+  height: 96px;
+  width: 96px;
+  background-color: rgba(0, 0, 0, 0.116);
+  
 }

@@ -126,7 +126,7 @@ export default function Sidebar({
             }`}
           >
             <Search className="h-4 w-4 shrink-0" />
-            <span className={`flex-1 text-left ${labelClass}`}>Quick search...</span>
+            <span className={`flex-1 text-left ${labelClass}`}>ค้นหา...</span>
             <kbd
               className={`rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 ${labelClass}`}
             >
