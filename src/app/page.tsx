@@ -1,13 +1,13 @@
-import { Search, Sparkle } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import ActionCard from "@/components/ActionCard";
 import Image from "next/image";
 import React from "react";
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
 import { DiaTextReveal } from "@/components/ui/dia-text-reveal"
 import { BlurFade } from "@/components/ui/blur-fade"
-import { Marquee } from "@/components/ui/marquee"
 import { Separator } from "@/components/ui/separator"
 import { supabase } from "@/lib/supabaseClient";
+import ProfileSearchMarquee from "@/components/ProfileSearchMarquee";
 
 // Generates pfp_1.JPG ... pfp_32.JPG public URLs from the "images" bucket, "pfp/" folder
 const PFP_COUNT = 32;
@@ -17,7 +17,19 @@ const pfpImages = Array.from({ length: PFP_COUNT }, (_, i) => {
   return { filename, url: data.publicUrl };
 });
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { data: profileRows } = await supabase
+    .from("profiles")
+    .select("id, full_name_th, nickname_th")
+    .order("id", { ascending: true });
+
+  // Match by order: 1st profile row -> pfp_1.JPG, 2nd -> pfp_2.JPG, etc.
+  const profiles = (profileRows ?? []).map((row, i) => ({
+    ...row,
+    filename: pfpImages[i]?.filename ?? "",
+    url: pfpImages[i]?.url ?? "",
+  }));
+
   return (
     <div className="mx-auto max-w-10xl py-10  sm:py-16">
       
@@ -86,38 +98,8 @@ export default function DashboardPage() {
       </div>
       
       
-      
-      <div className="mb-12 mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <Search className="h-4 w-4 shrink-0 text-slate-400" />
-        <input
-          type="text"
-          placeholder="ลองพิมพ์ชื่อเล่นคนที่คุณกำลังมองหา"
-          className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
-        />
-        <kbd className="hidden shrink-0 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:block">
-          Ctrl
-        </kbd>
-        <kbd className="hidden shrink-0 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:block">
-          K
-        </kbd>
-      </div>
-     
-<Marquee className="[--duration:60s]">
-  {pfpImages.map((img) => (
-    <div
-      key={img.filename}
-      className="card mx-2 h-24 w-24 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white"
-    >
-      <Image
-        src={img.url}
-        alt={img.filename}
-        width={96}
-        height={96}
-        className="h-full w-full object-cover"
-      />
-    </div>
-  ))}
-</Marquee>
+      <ProfileSearchMarquee profiles={profiles} />
+
 
       {/* Card grid 
       <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
