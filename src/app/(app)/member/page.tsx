@@ -298,13 +298,13 @@ function MemberList({
       <h1 className="text-center text-5xl font-medium leading-tight  text-neutral-900 md:text-5xl lg:text-6xl dark:text-neutral-100 font-noto ">
         <p>สมาชิกทั้งหมดของ</p>
         <SquigglyText 
-          stepDuration={70}
+          stepDuration={0}
           scale={[6, 9]}
           className="text-amber-500 font-bold"
         >
           PISTAR 
         </SquigglyText> <SquigglyText
-          stepDuration={70}
+          stepDuration={0}
           scale={[6, 9]}
           className="text-blue-500 font-bold"
         >
