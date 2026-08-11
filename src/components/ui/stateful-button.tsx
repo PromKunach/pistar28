@@ -65,8 +65,16 @@ export const Button = ({ className, children, ...props }: ButtonProps) => {
 
   const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     await animateLoading();
-    await props.onClick?.(event);
-    await animateSuccess();
+    try {
+      await props.onClick?.(event);
+      await animateSuccess();
+    } catch {
+      await animate(
+        ".loader",
+        { width: "0px", scale: 0, display: "none" },
+        { duration: 0.2 },
+      );
+    }
   };
 
   const {
