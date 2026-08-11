@@ -92,7 +92,7 @@ export default function SignupFormDemo() {
         <div className="w-full max-w-md">
           <div className="flex">
             <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
-              <Image className="mb-5" src="/logo_img.png" alt="logo" width={80} height={80} />
+              <Image className="mb-5" src="/logo_img_white.png" alt="logo" width={80} height={80} />
               เข้าสู่ระบบ
             </h2>
           </div>
