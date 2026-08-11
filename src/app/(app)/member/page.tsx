@@ -326,7 +326,7 @@ function MemberList({
             className={cn(
               "transition-transform duration-200 ease-out flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-md ",
               isSelected
-                ? "border-neutral-200 bg-slate-50 shadow-xl ring-1 ring-slate-200"
+                ? "border-neutral-200 bg-slate-50 shadow-xl ring-1 ring-slate-500"
                 : "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50"
             )}
           >
