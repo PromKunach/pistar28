@@ -1,4 +1,4 @@
-import { Roboto_Mono, Noto_Sans_Thai, Geist } from "next/font/google";
+import { Roboto_Mono, Noto_Sans_Thai, Noto_Sans_Thai_Looped, Itim, Geist } from "next/font/google";
 import localFont from "next/font/local";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,20 @@ const notoSansThai = Noto_Sans_Thai({
   display: "swap",
 });
 
+// Setup Noto Sans Thai Looped
+const notoSansThaiLooped = Noto_Sans_Thai_Looped({
+  subsets: ["latin", "thai"],
+  weight: ["400", "500", "700"],
+  variable: "--font-noto-sans-th-looped",
+  display: "swap",
+});
+const itim = Itim({
+  subsets: ["latin", "thai"],
+  weight: "400",
+  variable: "--font-itim",
+  display: "swap",
+});
+
 export default function RootLayout({
   children,
 }: {
@@ -48,14 +62,16 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
-      className={cn(
-        geist.variable,
-        googleSans.variable,
-        robotoMono.variable,
-        notoSansThai.variable
-      )}
-    >
+  lang="en"
+  className={cn(
+    geist.variable,
+    googleSans.variable,
+    robotoMono.variable,
+    notoSansThai.variable,
+    notoSansThaiLooped.variable,
+    itim.variable
+  )}
+>
       <body className="font-mono antialiased">
         <AppLayoutWrapper>{children}</AppLayoutWrapper>
       </body>

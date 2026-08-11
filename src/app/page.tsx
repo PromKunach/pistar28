@@ -23,7 +23,6 @@ export default async function DashboardPage() {
     .select("id, full_name_th, nickname_th")
     .order("id", { ascending: true });
 
-  // Match by order: 1st profile row -> pfp_1.JPG, 2nd -> pfp_2.JPG, etc.
   const profiles = (profileRows ?? []).map((row, i) => ({
     ...row,
     filename: pfpImages[i]?.filename ?? "",

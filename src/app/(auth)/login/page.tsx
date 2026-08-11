@@ -3,7 +3,8 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-
+import { Highlighter } from "@/components/ui/highlighter";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ThreeDMarquee } from "@/components/ui/3d-marquee";
  import { Button } from "@/components/ui/stateful-button";
@@ -45,9 +46,10 @@ export default function SignupFormDemo() {
             </h2>
           </div>
 
-          <p className="mt-2 max-w-sm text-sm text-neutral-600 dark:text-neutral-300 ">
-            สำหรับนักศึกษาในศูนย์ ใช้อีเมล @pi.ac.th เพื่อมีส่วนร่วมในระบบ
-          </p>
+          <div className="mt-2 max-w-md text-sm text-neutral-600 dark:text-neutral-300 relative">
+           <Highlighter  action="highlight" animationDuration={500} iterations={3} color="#fdff7d8b">
+               <div  className=" px-[5px]"> เฉพาะนักศึกษาในศูนย์ </div></Highlighter> ใช้อีเมล @pi.ac.th เพื่อมีส่วนร่วมในระบบ
+          </div>
 
           <form className="my-8" onSubmit={handleSubmit}>
             <div className="mb-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"></div>
@@ -60,7 +62,8 @@ export default function SignupFormDemo() {
               <Input id="password" placeholder="••••••••" type="password" />
             </LabelInputContainer>
 
-<div className="flex h-40 w-full items-center justify-center">
+<div className="flex h-40 w-full items-center pl-[8px]">
+      <Link href="/" className="pt-[5px] flex h-[36px] w-[100px] rounded-[24px] outline-2 mr-[8px] px-5 outline-black hover:bg-neutral-100 cursor-pointer align-item-center text-center" >cancel</Link>
       <Button
 onClick={handleClick} 
 >  Log in

@@ -51,7 +51,7 @@ export default function ProfileSearchMarquee({ profiles }: { profiles: Profile[]
       </div>
 
       {query === "" ? (
-        <Marquee className="[--duration:30s]" >{filtered.map(avatar)}</Marquee>
+        <Marquee className="[--duration:60s]" >{filtered.map(avatar)}</Marquee>
       ) : (
         <div className="flex flex-wrap  justify-center gap-2 min-w-[100%] overflow-auto no-scrollbar">
           {filtered.map(avatar)}

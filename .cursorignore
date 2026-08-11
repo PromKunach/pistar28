@@ -1,0 +1,53 @@
+# Dependencies & Build Outputs
+node_modules/
+.next/
+dist/
+build/
+out/
+bin/
+obj/
+target/
+
+# Package Lock Files (Massive token sink)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+Cargo.lock
+Gemfile.lock
+composer.lock
+
+# Logs & Temporary Files
+*.log
+*.tmp
+*.cache
+.cache/
+tmp/
+logs/
+
+# Large Media, Assets & Data
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.mp4
+*.mp3
+*.pdf
+*.zip
+*.tar.gz
+*.csv
+*.json
+*.sqlite
+*.db
+
+# Environment Files & Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Version Control & IDE Files
+.git/
+.svn/
+.vscode/
+.idea/

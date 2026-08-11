@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Search,
   ChevronDown,
@@ -24,30 +25,72 @@ import Image from "next/image";
 // Config — edit this to reshape the nav
 // ---------------------------------------------
 
+type SubItem = {
+  label: string;
+  href: string;
+};
+
 type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   expandable?: boolean;
   href: string;
+  children?: SubItem[]; // sub-links shown when expanded
 };
 
 const NAV_TOP: NavItem[] = [
   { label: "หน้าหลัก", icon: Home, href: "/" },
-  { label: "สมาชิก", icon: Users, href: "/member" },
+  { label: "สมาชิก", icon: Users,expandable:true, href: "/member", children:[{label: "สมาชิกทั้งหมด", href: "/member"},{ label: "ฝ่ายการทำงาน", href: "/member/section" },]},
   { label: "โน้ตประกาศ", icon: Pin, href: "/announces" },
   { label: "กำหนดการณ์", icon: CalendarDays, href: "/appointment" },
   { label: "ฟีดข่าวสาร", icon: Loader, href: "/news" },
 ];
 
 const NAV_OBSERVE: NavItem[] = [
-  { label: "เอกสารต่างๆ", icon: FileText, expandable: true, href: "/files" },
-  { label: "อัลบั้มภาพ", icon: Images, expandable: true, href: "/album" },
+  {
+    label: "เอกสารต่างๆ",
+    icon: FileText,
+    expandable: true,
+    href: "/files",
+    children: [
+      { label: "เอกสารทั้งหมด", href: "/files" },
+      { label: "อัปโหลดใหม่", href: "/files/upload" },
+    ],
+  },
+  {
+    label: "อัลบั้มภาพ",
+    icon: Images,
+    expandable: true,
+    href: "/album",
+    children: [
+      { label: "อัลบั้มทั้งหมด", href: "/album" },
+      { label: "เพิ่มรูปภาพ", href: "/album/upload" },
+    ],
+  },
 ];
 
 const NAV_BUILD: NavItem[] = [
-  { label: "เครื่องมือ", icon: Wrench, expandable: true, href: "/tools" },
-  { label: "ติดต่อ", icon: Phone, expandable: true, href: "/contacts" },
-  { label: "เกี่ยวกับพวกเรา", icon: Info, expandable: true, href: "/contacts" },
+  {
+    label: "เครื่องมือ",
+    icon: Wrench,
+    expandable: true,
+    href: "/tools",
+    children: [{ label: "เครื่องมือทั้งหมด", href: "/tools" }],
+  },
+  {
+    label: "ติดต่อ",
+    icon: Phone,
+    expandable: true,
+    href: "/contacts",
+    children: [{ label: "ช่องทางติดต่อ", href: "/contacts" }],
+  },
+  {
+    label: "เกี่ยวกับพวกเรา",
+    icon: Info,
+    expandable: true,
+    href: "/contacts",
+    children: [{ label: "เกี่ยวกับเรา", href: "/about" }],
+  },
 ];
 
 const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
@@ -77,6 +120,13 @@ export default function Sidebar({
   // vanish at the lg breakpoint but still show normally on the mobile drawer.
   const labelClass = desktopCollapsed ? "lg:hidden" : "";
 
+  // Tracks which expandable nav items are currently open, by label
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+
+  const toggleItem = (label: string) => {
+    setOpenItems((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
   return (
     <>
       {/* Backdrop — mobile only, dims page behind the drawer, click to close */}
@@ -104,7 +154,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.1.1
+            version : 1.2.0
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
@@ -136,7 +186,7 @@ export default function Sidebar({
         </div>
 
         {/* Nav sections */}
-        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 font-sans">
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 font-sans no-scrollbar">
           {NAV_SECTIONS.map((section, i) => (
             <div key={i} className={i === 0 ? "" : "mt-5"}>
               {section.title && (
@@ -145,27 +195,69 @@ export default function Sidebar({
                 </p>
               )}
               <ul className="space-y-0.5">
-                {section.items.map((item) => (
-                  <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${
-                        item.label === "Account home"
-                          ? "bg-orange-50 text-orange-700"
-                          : ""
-                      } ${desktopCollapsed ? "lg:justify-center" : ""}`}
-                      title={desktopCollapsed ? item.label : undefined}
-                    >
-                      <item.icon className="h-[18px] w-[18px] shrink-0" />
-                      <span className={`flex-1 truncate ${labelClass}`}>{item.label}</span>
-                      {item.expandable && (
-                        <ChevronRight
-                          className={`h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-slate-400 ${labelClass}`}
-                        />
+                {section.items.map((item) => {
+                  const isOpen = openItems[item.label] ?? false;
+                  // Collapsed desktop rail: don't allow expand, behave like a plain link
+                  const canExpand = item.expandable && !desktopCollapsed;
+
+                  return (
+                    <li key={item.label}>
+                      {canExpand ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleItem(item.label)}
+                          className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          <item.icon className="h-[18px] w-[18px] shrink-0" />
+                          <span className="flex-1 truncate text-left">{item.label}</span>
+                          <ChevronRight
+                            className={`h-3.5 w-3.5 shrink-0 text-slate-300 transition-transform duration-200 group-hover:text-slate-400 ${
+                              isOpen ? "rotate-90" : ""
+                            }`}
+                          />
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${
+                            desktopCollapsed ? "lg:justify-center" : ""
+                          }`}
+                          title={desktopCollapsed ? item.label : undefined}
+                        >
+                          <item.icon className="h-[18px] w-[18px] shrink-0" />
+                          <span className={`flex-1 truncate ${labelClass}`}>{item.label}</span>
+                          {item.expandable && (
+                            <ChevronRight
+                              className={`h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-slate-400 ${labelClass}`}
+                            />
+                          )}
+                        </Link>
                       )}
-                    </Link>
-                  </li>
-                ))}
+
+                      {/* Expandable sub-items — animated via grid-template-rows */}
+                      {canExpand && item.children && (
+                        <div
+                          className={`grid transition-all duration-200 ease-in-out ${
+                            isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                          }`}
+                        >
+                          <ul className="overflow-hidden pl-9">
+                            {item.children.map((sub) => (
+                              <li key={sub.href}>
+                                <Link
+                                  href={sub.href}
+                                  className="block py-1.5 text-sm text-slate-500 hover:text-slate-800"
+                                >
+                                  {sub.label}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
