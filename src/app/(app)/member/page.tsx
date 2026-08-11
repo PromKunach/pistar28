@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 import { InertialScrollArea } from "@/components/ui/inertial-scroll";
+import { InspectCard } from "@/components/ui/inspect-card";
 
 import { SquigglyText } from "@/components/ui/squiggly-text";
 type Profile = {
@@ -44,12 +46,145 @@ function MemberListSkeleton() {
 
 function DetailSkeleton() {
   return (
-    <div className="flex animate-pulse flex-col items-center p-8">
-      <div className="h-72 w-72 rounded-2xl bg-slate-200 sm:h-80 sm:w-80" />
-      <div className="mt-8 w-full max-w-md space-y-3">
-        <div className="mx-auto h-7 w-2/3 rounded bg-slate-200" />
-        <div className="mx-auto h-4 w-1/2 rounded bg-slate-100" />
-        <div className="h-24 rounded-xl bg-slate-100" />
+    <div className="flex min-h-full animate-pulse flex-col items-center justify-center px-6 py-12">
+      <div className="h-[28rem] w-[20rem] rounded-[1.75rem] bg-slate-200 sm:h-[32rem] sm:w-[22.5rem] lg:h-[34rem] lg:w-[24rem]" />
+    </div>
+  );
+}
+
+/**
+ * Swaps between two stacked layers so a new photo fades in over the old one
+ * without keeping every profile image mounted.
+ */
+function CrossfadeImage({ src, alt }: { src: string; alt: string }) {
+  const [layers, setLayers] = useState(() => [{ src, key: 0 }]);
+  const keyRef = useRef(0);
+
+  useEffect(() => {
+    setLayers((prev) => {
+      if (prev[prev.length - 1].src === src) return prev;
+      keyRef.current += 1;
+      return [...prev.slice(-1), { src, key: keyRef.current }];
+    });
+  }, [src]);
+
+  return (
+    <>
+      {layers.map((layer, i) => {
+        const isTop = i === layers.length - 1;
+        return (
+          <FadeInImage
+            key={layer.key}
+            src={layer.src}
+            alt={isTop ? alt : ""}
+            instant={layers.length === 1}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function FadeInImage({
+  src,
+  alt,
+  instant,
+}: {
+  src: string;
+  alt: string;
+  instant: boolean;
+}) {
+  const [visible, setVisible] = useState(instant);
+
+  useEffect(() => {
+    if (instant) return;
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, [instant]);
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      decoding="async"
+      draggable={false}
+      className={cn(
+        "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
+        visible ? "opacity-100" : "opacity-0"
+      )}
+    />
+  );
+}
+
+function CardFront({ profile }: { profile: Profile }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-slate-900 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-slate-900/10">
+      <CrossfadeImage src={profile.url} alt={profile.full_name_th} />
+
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/5 to-transparent" />
+      <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/20" />
+
+      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+        <Image
+          src="/logo_img_white.png"
+          alt="PISTAR 28"
+          width={56}
+          height={56}
+          draggable={false}
+          className="h-10 w-auto object-contain sm:h-12"
+        />
+        <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tracking-normal text-white/90">
+          #{profile.id}
+        </span>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 p-5">
+        <p className="text-lg font-semibold leading-snug text-white sm:text-xl">
+          {profile.full_name_th}
+        </p>
+        <p className="mt-0.5 text-sm text-white/65">({profile.nickname_th})</p>
+        <span className="mt-3 inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs text-white/85">
+          {profile.section}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CardBack({ profile }: { profile: Profile }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-slate-950 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-slate-900/10">
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.18]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgb(148 163 184) 1px, transparent 0)",
+          backgroundSize: "14px 14px",
+        }}
+      />
+      <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/15" />
+
+      <div className="relative p-5">
+        <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-white/25">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={profile.url}
+              alt=""
+              decoding="async"
+              draggable={false}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">
+              {profile.full_name_th}
+            </p>
+            <p className="truncate text-xs text-white/55">({profile.nickname_th})</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -68,42 +203,13 @@ function MemberDetailPanel({
   if (!selectedProfile) return null;
 
   return (
-    <div className="flex flex-col items-center p-6 sm:p-8">
-      <div className="relative h-64 w-64 overflow-hidden rounded-2xl border border-slate-200 shadow-sm sm:h-80 sm:w-80">
-        {profiles.map((profile) => (
-          // Keep all images mounted and crossfade — avoids reload flash on select
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={profile.id}
-            src={profile.url}
-            alt={profile.complete_name_th}
-            decoding="async"
-            className={cn(
-              "absolute inset-0 h-full w-full object-cover transition-opacity duration-150",
-              String(profile.id) === selectedId ? "opacity-100" : "opacity-0"
-            )}
-          />
-        ))}
-      </div>
-
-      <div className="mt-6 w-full max-w-md text-center sm:mt-8">
-        <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">
-          {selectedProfile.full_name_th}
-        </h2>
-        <p className="mt-1 text-base text-slate-500">({selectedProfile.nickname_th})</p>
-      </div>
-
-      <dl className="mt-6 w-full max-w-md space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:mt-8">
-        
-        <div className="flex items-center justify-between gap-4 text-sm">
-          <dt className="text-slate-500">ฝ่าย</dt>
-          <dd className="font-medium text-slate-900">{selectedProfile.section}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-4 text-sm">
-          <dt className="text-slate-500">ลำดับ</dt>
-          <dd className="font-medium text-slate-900">{selectedProfile.id}</dd>
-        </div>
-      </dl>
+    <div className="flex min-h-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
+      <InspectCard
+        resetKey={selectedProfile.id}
+        front={<CardFront profile={selectedProfile} />}
+        back={<CardBack profile={selectedProfile} />}
+        ariaLabel={`การ์ดของ ${selectedProfile.full_name_th} — ลากเพื่อหมุน คลิกเพื่อพลิก`}
+      />
     </div>
   );
 }
@@ -112,39 +218,77 @@ const MIN_SCALE = 0.72;
 const MAX_SCALE = 1;
 const MAX_DIST = 160; // px from center at which item hits MIN_SCALE
 
+const IDLE_FRAMES_BEFORE_SLEEP = 12;
+
 function useCenterScale(
   containerRef: React.RefObject<HTMLDivElement | null>,
   itemRefs: React.RefObject<Map<string, HTMLButtonElement>>,
   axis: "x" | "y",
-  viewportRef?: React.RefObject<HTMLElement | null>
+  viewportRef?: React.RefObject<HTMLElement | null>,
+  itemCount = 0
 ) {
   useEffect(() => {
-    let rafId: number;
+    const maybeViewport = viewportRef?.current ?? containerRef.current;
+    if (!maybeViewport) return;
+    const viewport: HTMLElement = maybeViewport;
+
+    const applied = new Map<HTMLElement, number>();
+    let rafId = 0;
+    let idleFrames = 0;
+
+    function paint() {
+      const rect = viewport.getBoundingClientRect();
+      const center = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
+      const items = Array.from(itemRefs.current.values());
+
+      // Read every rect first, then write — interleaving them forces a reflow per item.
+      const centers = items.map((el) => {
+        const r = el.getBoundingClientRect();
+        return axis === "x" ? r.left + r.width / 2 : r.top + r.height / 2;
+      });
+
+      let changed = false;
+      items.forEach((el, i) => {
+        const dist = Math.min(Math.abs(centers[i] - center), MAX_DIST);
+        const t = 1 - dist / MAX_DIST; // 1 at center, 0 at edge
+        const previous = applied.get(el);
+        if (previous !== undefined && Math.abs(previous - t) < 0.004) return;
+
+        applied.set(el, t);
+        changed = true;
+        el.style.transform = `scale(${MIN_SCALE + t * (MAX_SCALE - MIN_SCALE)})`;
+        el.style.opacity = `${0.55 + 0.45 * t}`;
+        el.style.zIndex = String(Math.round(t * 100));
+      });
+
+      return changed;
+    }
 
     function loop() {
-      const viewport = viewportRef?.current ?? containerRef.current;
-      if (viewport) {
-        const rect = viewport.getBoundingClientRect();
-        const center = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
-
-        itemRefs.current.forEach((el) => {
-          const r = el.getBoundingClientRect();
-          const itemCenter = axis === "x" ? r.left + r.width / 2 : r.top + r.height / 2;
-          const dist = Math.min(Math.abs(itemCenter - center), MAX_DIST);
-          const t = 1 - dist / MAX_DIST; // 1 at center, 0 at edge
-          const scale = MIN_SCALE + t * (MAX_SCALE - MIN_SCALE);
-          el.style.transform = `scale(${scale})`;
-          el.style.opacity = `${0.55 + 0.45 * t}`;
-          el.style.zIndex = String(Math.round(t * 100));
-        });
+      idleFrames = paint() ? 0 : idleFrames + 1;
+      if (idleFrames > IDLE_FRAMES_BEFORE_SLEEP) {
+        rafId = 0;
+        return;
       }
       rafId = requestAnimationFrame(loop);
     }
 
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [axis]);
+    function wake() {
+      idleFrames = 0;
+      if (!rafId) rafId = requestAnimationFrame(loop);
+    }
+
+    wake();
+    viewport.addEventListener("scroll", wake, { passive: true });
+    const ro = new ResizeObserver(wake);
+    ro.observe(viewport);
+
+    return () => {
+      viewport.removeEventListener("scroll", wake);
+      ro.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [axis, containerRef, itemRefs, viewportRef, itemCount]);
 }
 
 function scrollToCenter(viewport: HTMLElement, item: HTMLElement, axis: "x" | "y") {
@@ -173,7 +317,7 @@ function AvatarCarousel({
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [edgePadding, setEdgePadding] = useState(0);
 
-  useCenterScale(containerRef, itemRefs, "x");
+  useCenterScale(containerRef, itemRefs, "x", undefined, profiles.length);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -277,7 +421,7 @@ function MemberList({
     return () => ro.disconnect();
   }, [profiles.length]);
 
-  useCenterScale(containerRef, itemRefs, "y", viewportRef);
+  useCenterScale(containerRef, itemRefs, "y", viewportRef, profiles.length);
 
   useEffect(() => {
     if (!selectedId || !viewportRef.current) return;

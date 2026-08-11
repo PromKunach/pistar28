@@ -8,6 +8,7 @@ import { AnimatePresence, motion, type Variants } from "motion/react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { LayeredOrbitingCircles } from "@/components/ui/orbiting-circles";
+import { Highlighter } from "@/components/ui/highlighter";
 
 type Profile = {
   id: string;
@@ -209,6 +210,19 @@ function SectionPanelContent({
   );
 }
 
+const SECTION_HIGHLIGHT_COLORS: Record<string, string> = {
+  Management: "#fde68a80",
+  Academic: "#bfdbfe80",
+  Place: "#bbf7d080",
+  Entertainment: "#fbcfe880",
+  Activity: "#fed7aa80",
+  Art: "#e9d5ff80",
+  Welfare: "#fecdd380",
+  PR: "#a5f3fc80",
+  IT: "#c7d2fe80",
+  Treasurer: "#d9f99d80",
+};
+
 const SECTION_TRANSITION: Variants = {
   initial: { opacity: 0, filter: "blur(6px)" },
   animate: {
@@ -229,13 +243,17 @@ function PersonPopupCard({
   position,
   popupRef,
   animateIn,
+  sectionId,
 }: {
   profile: Profile;
   role: RoleLabel;
   position: { x: number; y: number };
   popupRef: React.RefObject<HTMLDivElement | null>;
   animateIn: boolean;
+  sectionId: string;
 }) {
+  const highlightColor = SECTION_HIGHLIGHT_COLORS[sectionId] ?? "#fde68a";
+
   return (
     <motion.div
       ref={popupRef}
@@ -248,14 +266,24 @@ function PersonPopupCard({
         damping: 28,
         mass: 0.8,
       }}
-      className="fixed z-[9999] w-56 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-white px-4 py-3.5 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)]"
+      className="fixed z-[9999] w-60 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-white px-4 py-3.5 text-center shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)]"
       onClick={(e) => e.stopPropagation()}
     >
       <p className="text-xs font-medium text-slate-400">{role}</p>
-      <p className="mt-1 text-base font-semibold leading-snug text-slate-900">
-        {profile.full_name_th}
+      <p className="mt-2 text-2xl font-bold leading-tight text-slate-900" style={{ opacity: 0.85 }}>
+        <Highlighter
+          key={profile.id}
+          color={highlightColor}
+          action="highlight"
+          padding={4}
+          animationDuration={700}
+          iterations={5}
+        >
+          {profile.nickname_th}
+        </Highlighter>
+   
       </p>
-      <p className="mt-1 text-sm text-slate-500">ชื่อเล่น {profile.nickname_th}</p>
+      <p className="mt-2 text-sm leading-snug text-slate-600">{profile.full_name_th}</p>
     </motion.div>
   );
 }
@@ -679,6 +707,7 @@ export default function HighlighterDemo() {
                           position={popupPosition}
                           popupRef={popupRef}
                           animateIn={!popupWasOpenRef.current}
+                          sectionId={selected.id}
                         />
                       )}
                     </AnimatePresence>,

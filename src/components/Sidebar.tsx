@@ -150,11 +150,11 @@ export default function Sidebar({
         {/* Brand / account switcher */}
         <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white">
-            <Image src="/logo_img.png" alt="logo" width={80} height={80} />
+            <Image src="/logo_img_white.png" alt="logo" width={80} height={80} />
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.3.0
+            version : 1.3.1
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
