@@ -94,10 +94,7 @@ function MemberDetailPanel({
       </div>
 
       <dl className="mt-6 w-full max-w-md space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:mt-8">
-        <div className="flex items-center justify-between gap-4 text-sm">
-          <dt className="text-slate-500">รหัสนักศึกษา</dt>
-          <dd className="font-medium text-slate-900">{selectedProfile.pbri_id}</dd>
-        </div>
+        
         <div className="flex items-center justify-between gap-4 text-sm">
           <dt className="text-slate-500">ฝ่าย</dt>
           <dd className="font-medium text-slate-900">{selectedProfile.section}</dd>
