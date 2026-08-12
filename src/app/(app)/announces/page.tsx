@@ -1,8 +1,10 @@
 "use client"
 
 import {
+  Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ElementType,
@@ -10,6 +12,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   BellIcon,
   CalendarIcon,
@@ -25,14 +28,16 @@ import {
 } from "@radix-ui/react-icons"
 
 import { AnimatePresence, motion } from "motion/react"
-import { ImagePlus, Loader2, Move, Upload, X } from "lucide-react"
+import { ImagePlus, Loader2, Move, Trash2, Upload, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
   createAnnouncement,
+  deleteAnnouncement,
   fetchAnnouncements,
   getAnnouncementImageUrl,
   resolveAuthorsForRecords,
+  updateAnnouncement,
   type AnnouncementRecord,
 } from "@/lib/announcements"
 import {
@@ -73,14 +78,14 @@ type BentoFeature = {
 }
 
 const ICON_OPTIONS: { id: string; label: string; Icon: ElementType }[] = [
-  { id: "file", label: "File", Icon: FileTextIcon },
-  { id: "input", label: "Input", Icon: InputIcon },
-  { id: "globe", label: "Globe", Icon: GlobeIcon },
-  { id: "calendar", label: "Calendar", Icon: CalendarIcon },
-  { id: "bell", label: "Bell", Icon: BellIcon },
-  { id: "speaker", label: "Speaker", Icon: SpeakerLoudIcon },
-  { id: "rocket", label: "Rocket", Icon: RocketIcon },
-  { id: "star", label: "Star", Icon: StarIcon },
+  { id: "file", label: "เอกสาร", Icon: FileTextIcon },
+  { id: "input", label: "ข้อความ", Icon: InputIcon },
+  { id: "globe", label: "โลก", Icon: GlobeIcon },
+  { id: "calendar", label: "ปฏิทิน", Icon: CalendarIcon },
+  { id: "bell", label: "กระดิ่ง", Icon: BellIcon },
+  { id: "speaker", label: "ประกาศ", Icon: SpeakerLoudIcon },
+  { id: "rocket", label: "จรวด", Icon: RocketIcon },
+  { id: "star", label: "ดาว", Icon: StarIcon },
 ]
 
 const DEFAULT_TEXT_COLOR = "#404040"
@@ -109,15 +114,20 @@ const CARD_PRESETS = [
 ]
 
 const THEME_PAIRS: { label: string; textColor: string; cardColor: string }[] = [
-  { label: "Classic", textColor: "#404040", cardColor: "#ffffff" },
-  { label: "Midnight", textColor: "#e2e8f0", cardColor: "#0f172a" },
-  { label: "Sunrise", textColor: "#9a3412", cardColor: "#fff7ed" },
-  { label: "Ocean", textColor: "#1e40af", cardColor: "#eff6ff" },
-  { label: "Forest", textColor: "#166534", cardColor: "#f0fdf4" },
-  { label: "Bloom", textColor: "#9f1239", cardColor: "#fff1f2" },
+  { label: "คลาสสิก", textColor: "#404040", cardColor: "#ffffff" },
+  { label: "เที่ยงคืน", textColor: "#e2e8f0", cardColor: "#0f172a" },
+  { label: "อรุณ", textColor: "#9a3412", cardColor: "#fff7ed" },
+  { label: "มหาสมุทร", textColor: "#1e40af", cardColor: "#eff6ff" },
+  { label: "ป่า", textColor: "#166534", cardColor: "#f0fdf4" },
+  { label: "บาน", textColor: "#9f1239", cardColor: "#fff1f2" },
 ]
 
 type ColorTarget = "text" | "card"
+
+const COLOR_TARGET_LABELS: Record<ColorTarget, string> = {
+  text: "ข้อความ",
+  card: "การ์ด",
+}
 
 function normalizeHex(value: string): string | null {
   const trimmed = value.trim()
@@ -315,6 +325,7 @@ type NoteDraft = {
   imageName: string | null
   imageMeta: ImageUploadMeta | null
   imageFocus: ImageFocus
+  imageRemoved: boolean
   author: CurrentUser
 }
 
@@ -348,7 +359,7 @@ function recordsToFeatures(
       name: record.name,
       description: record.description,
       href: `/announces/${record.id}`,
-      cta: "Open board",
+      cta: "เปิดบอร์ด",
       background: tileBackground(imageUrl, record.image_focus, record.card_color),
       placement,
       author,
@@ -379,7 +390,7 @@ function recordToFeature(
     name: record.name,
     description: record.description,
     href: `/announces/${record.id}`,
-    cta: "Open board",
+    cta: "เปิดบอร์ด",
     background: tileBackground(imageUrl, record.image_focus, record.card_color),
     placement,
     author,
@@ -388,21 +399,35 @@ function recordToFeature(
   }
 }
 
+function announceLoadErrorMessage(error: unknown) {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message: string }).message)
+    if (message.includes("announcements") && message.includes("does not exist")) {
+      return "ไม่พบตาราง announcements กรุณารัน supabase/announcements.sql ก่อน"
+    }
+    if (message.includes("row-level security") || message.includes("permission denied")) {
+      return "โหลดโน้ตประกาศไม่ได้ กรุณารันนโยบายใน supabase/announcements.sql ที่อัปเดตแล้ว"
+    }
+    return message
+  }
+  return "โหลดโน้ตประกาศไม่ได้ กรุณาลองใหม่อีกครั้ง"
+}
+
 function announcePostErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "message" in error) {
     const message = String((error as { message: string }).message)
     if (message.includes("announcements") && message.includes("does not exist")) {
-      return "Announcements table not found. Run supabase/announcements.sql first."
+      return "ไม่พบตาราง announcements กรุณารัน supabase/announcements.sql ก่อน"
     }
     if (message.includes("row-level security")) {
-      return "You don't have permission to post. Check Supabase RLS policies."
+      return "ไม่มีสิทธิ์โพสต์ ตรวจสอบนโยบาย RLS ใน Supabase"
     }
     if (message.includes("Bucket not found") || message.includes("storage")) {
-      return "Image upload failed. Check the images bucket and storage policies."
+      return "อัปโหลดรูปไม่สำเร็จ ตรวจสอบ bucket images และนโยบาย storage"
     }
     return message
   }
-  return "Could not save announcement. Please try again."
+  return "บันทึกโน้ตประกาศไม่ได้ กรุณาลองใหม่อีกครั้ง"
 }
 
 function compressedFileName(name: string) {
@@ -428,7 +453,7 @@ function ImageSizeBadge({ meta }: { meta: ImageUploadMeta }) {
       </span>
       {saved > 0 && (
         <span className="text-green-700 dark:text-green-400">
-          {formatFileSize(meta.originalSize)} → saved {formatFileSize(saved)} (
+          {formatFileSize(meta.originalSize)} → ลด {formatFileSize(saved)} (
           {savedPercent}%)
         </span>
       )}
@@ -438,7 +463,7 @@ function ImageSizeBadge({ meta }: { meta: ImageUploadMeta }) {
 
 function AuthorProfile({
   author,
-  subtitle = "Posting as",
+  subtitle = "โพสต์ในนาม",
 }: {
   author: CurrentUser
   subtitle?: string
@@ -662,8 +687,8 @@ function SpectrumPicker({
         {...area.handlers}
         role="slider"
         tabIndex={0}
-        aria-label="Saturation and brightness"
-        aria-valuetext={`Saturation ${Math.round(s * 100)}%, brightness ${Math.round(v * 100)}%`}
+        aria-label="ความอิ่มตัวและความสว่าง"
+        aria-valuetext={`ความอิ่มตัว ${Math.round(s * 100)}% ความสว่าง ${Math.round(v * 100)}%`}
         onKeyDown={(event) => {
           const step = event.shiftKey ? 0.1 : 0.02
           if (event.key === "ArrowRight") onChange(hsvToHex(hue, clamp(s + step, 0, 1), v))
@@ -693,7 +718,7 @@ function SpectrumPicker({
         {...hueBar.handlers}
         role="slider"
         tabIndex={0}
-        aria-label="Hue"
+        aria-label="สี (Hue)"
         aria-valuemin={0}
         aria-valuemax={360}
         aria-valuenow={Math.round(hue)}
@@ -783,7 +808,7 @@ function ColorTargetPicker({
 
   return (
     <div className="space-y-2">
-      <Label>Color</Label>
+      <Label>สี</Label>
       <div ref={panelRef} className="relative">
         <button
           type="button"
@@ -799,7 +824,7 @@ function ColorTargetPicker({
             >
               A
             </span>
-            <span className="truncate">{matchedTheme?.label ?? "Custom"}</span>
+            <span className="truncate">{matchedTheme?.label ?? "กำหนดเอง"}</span>
           </span>
           <ChevronDownIcon
             className={cn(
@@ -813,7 +838,7 @@ function ColorTargetPicker({
           {open && (
             <motion.div
               role="dialog"
-              aria-label="Color settings"
+              aria-label="ตั้งค่าสี"
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
@@ -827,7 +852,7 @@ function ColorTargetPicker({
                     type="button"
                     onClick={() => onTargetChange(option)}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium capitalize transition-colors",
+                      "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
                       target === option
                         ? "bg-background text-neutral-900 shadow-sm dark:text-neutral-100"
                         : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -839,7 +864,7 @@ function ColorTargetPicker({
                         backgroundColor: option === "text" ? textColor : cardColor,
                       }}
                     />
-                    {option}
+                    {COLOR_TARGET_LABELS[option]}
                   </button>
                 ))}
               </div>
@@ -859,7 +884,7 @@ function ColorTargetPicker({
                           "ring-2 ring-neutral-900 ring-offset-2 ring-offset-background dark:ring-neutral-100"
                       )}
                       style={{ backgroundColor: preset }}
-                      aria-label={`Use ${preset}`}
+                      aria-label={`ใช้ ${preset}`}
                     />
                   )
                 })}
@@ -887,7 +912,7 @@ function ColorTargetPicker({
                   spellCheck={false}
                   className="h-9 min-w-0 flex-1 rounded-md border border-neutral-200 bg-background px-2 font-mono text-xs text-neutral-800 uppercase outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-200 dark:focus-visible:ring-neutral-600"
                   placeholder="#000000"
-                  aria-label={`${target} color hex value`}
+                  aria-label={`ค่าสี ${COLOR_TARGET_LABELS[target]}`}
                 />
               </div>
 
@@ -900,7 +925,7 @@ function ColorTargetPicker({
                 )}
               >
                 <span>
-                  {readable ? "Readable" : "Low contrast"} · {ratio.toFixed(1)}:1
+                  {readable ? "อ่านง่าย" : "คอนทราสต์ต่ำ"} · {ratio.toFixed(1)}:1
                 </span>
                 {!readable && (
                   <button
@@ -908,13 +933,13 @@ function ColorTargetPicker({
                     onClick={() => onTextColorChange(readableTextColor(cardColor))}
                     className="font-medium underline-offset-2 hover:underline"
                   >
-                    Fix text
+                    ปรับข้อความ
                   </button>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-neutral-500">Themes</p>
+                <p className="text-[11px] font-medium text-neutral-500">ธีม</p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {THEME_PAIRS.map((pair) => (
                     <button
@@ -950,7 +975,7 @@ function ColorTargetPicker({
                   }}
                   className="text-[11px] text-neutral-500 underline-offset-2 hover:underline"
                 >
-                  Swap colors
+                  สลับสี
                 </button>
                 <button
                   type="button"
@@ -960,7 +985,7 @@ function ColorTargetPicker({
                   }}
                   className="text-[11px] text-neutral-500 underline-offset-2 hover:underline"
                 >
-                  Reset both
+                  รีเซ็ตทั้งคู่
                 </button>
               </div>
             </motion.div>
@@ -1052,7 +1077,7 @@ function ImageCropper({
         <div className="pointer-events-none absolute inset-0 flex items-start justify-center p-2">
           <span className="inline-flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[11px] text-white backdrop-blur-sm">
             <Move className="h-3 w-3" />
-            Drag to reposition
+            ลากเพื่อปรับตำแหน่ง
           </span>
         </div>
       </div>
@@ -1060,7 +1085,7 @@ function ImageCropper({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <Label htmlFor="image-zoom" className="text-xs text-neutral-500">
-            Zoom / crop
+            ซูม / ครอบตัด
           </Label>
           <span className="text-xs tabular-nums text-neutral-500">
             {focus.zoom.toFixed(1)}x
@@ -1083,7 +1108,7 @@ function ImageCropper({
           onClick={() => onChange(DEFAULT_IMAGE_FOCUS)}
           className="text-xs text-neutral-500 underline-offset-2 hover:underline"
         >
-          Reset position
+          รีเซ็ตตำแหน่ง
         </button>
       </div>
     </div>
@@ -1094,12 +1119,16 @@ function AddNoteDialog({
   open,
   onClose,
   onSubmit,
+  onDelete,
+  editRecord,
   author,
   authorReady,
 }: {
   open: boolean
   onClose: () => void
   onSubmit: (draft: NoteDraft) => Promise<void>
+  onDelete?: () => Promise<void>
+  editRecord?: AnnouncementRecord | null
   author: CurrentUser | null
   authorReady: boolean
 }) {
@@ -1119,6 +1148,8 @@ function AddNoteDialog({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [imageFocus, setImageFocus] = useState<ImageFocus>(DEFAULT_IMAGE_FOCUS)
   const [isDragging, setIsDragging] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const iconMenuRef = useRef<HTMLDivElement>(null)
   const imageUrlRef = useRef<string | null>(null)
@@ -1144,13 +1175,13 @@ function AddNoteDialog({
     setImageError(null)
 
     if (!file.type.startsWith("image/")) {
-      setImageError("Please choose a PNG, JPG, or WebP image.")
+      setImageError("กรุณาเลือกไฟล์ PNG, JPG หรือ WebP")
       return
     }
 
     if (file.size > MAX_UPLOAD_BYTES) {
       setImageError(
-        `Image is too large (${formatFileSize(file.size)}). Max ${formatFileSize(MAX_UPLOAD_BYTES)}.`
+        `รูปใหญ่เกินไป (${formatFileSize(file.size)}) สูงสุด ${formatFileSize(MAX_UPLOAD_BYTES)}`
       )
       return
     }
@@ -1173,7 +1204,7 @@ function AddNoteDialog({
       })
       setImageFocus(DEFAULT_IMAGE_FOCUS)
     } catch {
-      setImageError("Could not compress that image. Try another file.")
+      setImageError("บีบอัดรูปไม่สำเร็จ ลองไฟล์อื่น")
     } finally {
       setIsCompressing(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
@@ -1183,17 +1214,44 @@ function AddNoteDialog({
   useEffect(() => {
     if (!open) return
 
+    setColorTarget("text")
+    setIconMenuOpen(false)
+    setSubmitError(null)
+    setIsSubmitting(false)
+    setIsDeleting(false)
+    setConfirmDelete(false)
+    clearImage()
+
+    if (editRecord) {
+      setName(editRecord.name)
+      setDescription(editRecord.description)
+      setIconId(editRecord.icon_id)
+      setTextColor(editRecord.text_color)
+      setCardColor(editRecord.card_color)
+      setImageFocus(editRecord.image_focus ?? DEFAULT_IMAGE_FOCUS)
+
+      const existingUrl = getAnnouncementImageUrl(editRecord.image_storage_path)
+      if (existingUrl) {
+        setImageUrl(existingUrl)
+        setImageName(editRecord.image_file_name)
+        setImageMeta(
+          editRecord.image_size_bytes && editRecord.image_original_size_bytes
+            ? {
+                originalSize: editRecord.image_original_size_bytes,
+                compressedSize: editRecord.image_size_bytes,
+              }
+            : null
+        )
+      }
+      return
+    }
+
     setName("")
     setDescription("")
     setIconId(ICON_OPTIONS[0].id)
     setTextColor(DEFAULT_TEXT_COLOR)
     setCardColor(DEFAULT_CARD_COLOR)
-    setColorTarget("text")
-    setIconMenuOpen(false)
-    setSubmitError(null)
-    setIsSubmitting(false)
-    clearImage()
-  }, [open, clearImage])
+  }, [open, editRecord, clearImage])
 
   useEffect(() => {
     if (!open) return
@@ -1216,14 +1274,19 @@ function AddNoteDialog({
     }
   }, [])
 
+  const isEditing = Boolean(editRecord)
   const canSubmit =
-    name.trim().length > 0 && Boolean(author) && !isCompressing && !isSubmitting
+    name.trim().length > 0 &&
+    Boolean(author) &&
+    !isCompressing &&
+    !isSubmitting &&
+    !isDeleting
   const selectedIcon =
     ICON_OPTIONS.find((option) => option.id === iconId) ?? ICON_OPTIONS[0]
   const PreviewIcon = selectedIcon.Icon
-  const previewName = name.trim() || "Note name"
+  const previewName = name.trim() || "ชื่อโน้ต"
   const previewDescription =
-    description.trim() || "Your description will appear here"
+    description.trim() || "คำอธิบายจะแสดงที่นี่"
 
   return (
     <AnimatePresence>
@@ -1231,7 +1294,7 @@ function AddNoteDialog({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.button
             type="button"
-            aria-label="Close dialog"
+            aria-label="ปิดหน้าต่าง"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1264,6 +1327,9 @@ function AddNoteDialog({
                     imageName,
                     imageMeta,
                     imageFocus,
+                    imageRemoved: Boolean(
+                      editRecord?.image_storage_path && !imageUrl
+                    ),
                     author,
                   })
                   imageBlobRef.current = null
@@ -1283,10 +1349,12 @@ function AddNoteDialog({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
-                  New note
+                  {isEditing ? "แก้ไขโน้ต" : "โน้ตใหม่"}
                 </h2>
                 <p className="text-sm text-neutral-500">
-                  This note is added to the top of the grid.
+                  {isEditing
+                    ? "ปรับรายละเอียดของโน้ตนี้ แล้วบันทึกการเปลี่ยนแปลง"
+                    : "โน้ตนี้จะถูกเพิ่มไว้ด้านบนของกริด"}
                 </p>
               </div>
               <div className="flex shrink-0 items-start gap-3">
@@ -1294,7 +1362,7 @@ function AddNoteDialog({
                   <AuthorProfile author={author} />
                 ) : authorReady ? (
                   <p className="max-w-[140px] text-right text-xs text-neutral-500">
-                    Sign in to post
+                    เข้าสู่ระบบเพื่อโพสต์
                   </p>
                 ) : (
                   <div className="h-9 w-28 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800" />
@@ -1304,7 +1372,7 @@ function AddNoteDialog({
                   variant="ghost"
                   size="icon-sm"
                   onClick={onClose}
-                  aria-label="Close"
+                  aria-label="ปิด"
                 >
                   <Cross2Icon />
                 </Button>
@@ -1313,14 +1381,14 @@ function AddNoteDialog({
 
             <div className="flex flex-col gap-6 md:grid md:grid-cols-2">
               <div className="order-1 space-y-2 md:order-2 md:sticky md:top-0">
-                <Label>Live preview</Label>
+                <Label>ตัวอย่างสด</Label>
                 <div className="h-[22rem] overflow-hidden rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 p-2 dark:border-neutral-800 dark:bg-neutral-900/40">
                   <BentoCard
                     name={previewName}
                     description={previewDescription}
                     Icon={PreviewIcon}
                     href="/announces"
-                    cta="Learn more"
+                    cta="ดูเพิ่มเติม"
                     textColor={textColor}
                     cardColor={cardColor}
                     author={
@@ -1337,35 +1405,35 @@ function AddNoteDialog({
                   />
                 </div>
                 <p className="text-xs text-neutral-500">
-                  Updates as you type — this is how the tile will look on the board.
+                  อัปเดตตามที่พิมพ์ — นี่คือหน้าตาการ์ดบนบอร์ด
                 </p>
               </div>
 
               <div className="order-2 space-y-5 md:order-1">
                 <div className="space-y-2">
-                  <Label htmlFor="note-name">Note name</Label>
+                  <Label htmlFor="note-name">ชื่อโน้ต</Label>
                   <Input
                     id="note-name"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder="Weekly meeting"
+                    placeholder="ประชุมรายสัปดาห์"
                     autoFocus
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="note-description">Note description</Label>
+                  <Label htmlFor="note-description">คำอธิบาย</Label>
                   <Input
                     id="note-description"
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
-                    placeholder="Short summary of the note"
+                    placeholder="สรุปสั้น ๆ ของโน้ต"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <SelectorDropdown
-                    label="Icon"
+                    label="ไอคอน"
                     valueLabel={selectedIcon.label}
                     valuePreview={<selectedIcon.Icon className="h-4 w-4 shrink-0" />}
                     open={iconMenuOpen}
@@ -1411,7 +1479,7 @@ function AddNoteDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Background image</Label>
+                  <Label>รูปพื้นหลัง</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -1436,10 +1504,10 @@ function AddNoteDialog({
                     <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 bg-gray-50 px-4 py-8 text-center dark:border-neutral-700 dark:bg-zinc-800">
                       <Loader2 className="h-6 w-6 animate-spin text-neutral-600 dark:text-neutral-300" />
                       <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                        Compressing image…
+                        กำลังบีบอัดรูป…
                       </p>
                       <p className="text-xs text-neutral-500">
-                        Resizing and converting to WebP
+                        ปรับขนาดและแปลงเป็น WebP
                       </p>
                     </div>
                   ) : imageUrl ? (
@@ -1455,7 +1523,7 @@ function AddNoteDialog({
                             onClick={() => fileInputRef.current?.click()}
                             className="text-xs text-neutral-500 underline-offset-2 hover:underline"
                           >
-                            Replace image
+                            เปลี่ยนรูป
                           </button>
                         </div>
                         <Button
@@ -1463,7 +1531,7 @@ function AddNoteDialog({
                           variant="ghost"
                           size="icon-sm"
                           onClick={clearImage}
-                          aria-label="Remove image"
+                          aria-label="ลบรูป"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -1512,11 +1580,11 @@ function AddNoteDialog({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                          Drop an image here, or click to browse
+                          ลากรูปมาวาง หรือคลิกเพื่อเลือก
                         </p>
                         <p className="text-xs text-neutral-500">
-                          PNG, JPG, or WebP · max {formatFileSize(MAX_UPLOAD_BYTES)} ·
-                          auto-compressed to WebP
+                          PNG, JPG หรือ WebP · สูงสุด {formatFileSize(MAX_UPLOAD_BYTES)} ·
+                          บีบอัดเป็น WebP อัตโนมัติ
                         </p>
                       </div>
                     </button>
@@ -1525,26 +1593,92 @@ function AddNoteDialog({
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+              {isEditing && onDelete && (
+                <div className="me-auto flex items-center gap-2">
+                  {confirmDelete ? (
+                    <>
+                      <span className="text-xs text-neutral-500">
+                        ลบโน้ตนี้ถาวร?
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setConfirmDelete(false)}
+                        disabled={isDeleting}
+                      >
+                        ไม่ลบ
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-red-600 text-white hover:bg-red-700"
+                        disabled={isDeleting}
+                        onClick={() => {
+                          void (async () => {
+                            setIsDeleting(true)
+                            setSubmitError(null)
+                            try {
+                              await onDelete()
+                            } catch (error) {
+                              setSubmitError(announcePostErrorMessage(error))
+                              setIsDeleting(false)
+                              setConfirmDelete(false)
+                            }
+                          })()
+                        }}
+                      >
+                        {isDeleting ? (
+                          <>
+                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                            กำลังลบ...
+                          </>
+                        ) : (
+                          "ยืนยันลบ"
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
+                      onClick={() => setConfirmDelete(true)}
+                      disabled={isSubmitting}
+                    >
+                      <Trash2 className="me-2 h-4 w-4" />
+                      ลบโน้ต
+                    </Button>
+                  )}
+                </div>
+              )}
               {submitError && (
                 <p
                   role="alert"
-                  className="me-auto max-w-sm text-xs text-red-600 dark:text-red-400"
+                  className="max-w-sm text-xs text-red-600 dark:text-red-400"
                 >
                   {submitError}
                 </p>
               )}
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-                Cancel
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting || isDeleting}
+              >
+                ยกเลิก
               </Button>
               <Button type="submit" disabled={!canSubmit}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    Posting…
+                    {isEditing ? "กำลังบันทึก..." : "กำลังโพสต์..."}
                   </>
+                ) : isEditing ? (
+                  "บันทึกการแก้ไข"
                 ) : (
-                  "Add note"
+                  "เพิ่มโน้ต"
                 )}
               </Button>
             </div>
@@ -1555,75 +1689,135 @@ function AddNoteDialog({
   )
 }
 
-export default function BentoDemo() {
+export default function AnnouncesPage() {
+  return (
+    <Suspense fallback={null}>
+      <BentoDemo />
+    </Suspense>
+  )
+}
+
+function BentoDemo() {
   const [features, setFeatures] = useState(initialFeatures)
+  const [records, setRecords] = useState<AnnouncementRecord[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const { user, ready: authorReady } = useCurrentUser()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const editId = searchParams.get("edit")
+
+  const load = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(null)
+    try {
+      const nextRecords = await fetchAnnouncements()
+      const authors = await resolveAuthorsForRecords(nextRecords)
+      setRecords(nextRecords)
+      setFeatures(recordsToFeatures(nextRecords, authors))
+    } catch (error) {
+      setLoadError(announceLoadErrorMessage(error))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      setIsLoading(true)
-      setLoadError(null)
-      try {
-        const records = await fetchAnnouncements()
-        const authors = await resolveAuthorsForRecords(records)
-        if (!cancelled) setFeatures(recordsToFeatures(records, authors))
-      } catch (error) {
-        if (!cancelled) setLoadError(announcePostErrorMessage(error))
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    }
-
     void load()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  }, [load])
 
-  const handlePost = useCallback(async (draft: NoteDraft) => {
-    const record = await createAnnouncement({
-      name: draft.name,
-      description: draft.description,
-      iconId: draft.iconId,
-      textColor: draft.textColor,
-      cardColor: draft.cardColor,
-      imageFocus: draft.imageFocus,
-      imageBlob: draft.imageBlob,
-      imageName: draft.imageName,
-      imageMeta: draft.imageMeta,
-      author: draft.author,
-    })
+  const editRecord = useMemo(
+    () => (editId ? records.find((record) => record.id === editId) ?? null : null),
+    [editId, records]
+  )
 
-    console.log("[announce] saved:", record)
+  useEffect(() => {
+    if (editRecord) setIsDialogOpen(true)
+  }, [editRecord])
 
-    setFeatures((current) => {
-      const { items, placement } = placeAtTop(current)
-      const feature = recordToFeature(record, draft.author, placement)
-      return [feature, ...items]
-    })
+  const closeDialog = useCallback(() => {
     setIsDialogOpen(false)
-  }, [])
+    if (editId) router.replace("/announces")
+  }, [editId, router])
+
+  const handlePost = useCallback(
+    async (draft: NoteDraft) => {
+      if (editRecord) {
+        const record = await updateAnnouncement({
+          id: editRecord.id,
+          name: draft.name,
+          description: draft.description,
+          iconId: draft.iconId,
+          textColor: draft.textColor,
+          cardColor: draft.cardColor,
+          imageFocus: draft.imageFocus,
+          imageBlob: draft.imageBlob,
+          imageName: draft.imageName,
+          imageMeta: draft.imageMeta,
+          imageRemoved: draft.imageRemoved,
+          previousStoragePath: editRecord.image_storage_path,
+        })
+
+        setRecords((current) =>
+          current.map((item) => (item.id === record.id ? record : item))
+        )
+        setIsDialogOpen(false)
+        router.replace("/announces")
+        await load()
+        return
+      }
+
+      const record = await createAnnouncement({
+        name: draft.name,
+        description: draft.description,
+        iconId: draft.iconId,
+        textColor: draft.textColor,
+        cardColor: draft.cardColor,
+        imageFocus: draft.imageFocus,
+        imageBlob: draft.imageBlob,
+        imageName: draft.imageName,
+        imageMeta: draft.imageMeta,
+        author: draft.author,
+      })
+
+      setRecords((current) => [record, ...current])
+      setFeatures((current) => {
+        const { items, placement } = placeAtTop(current)
+        const feature = recordToFeature(record, draft.author, placement)
+        return [feature, ...items]
+      })
+      setIsDialogOpen(false)
+    },
+    [editRecord, load, router]
+  )
+
+  const handleDelete = useCallback(async () => {
+    if (!editRecord) return
+    await deleteAnnouncement(editRecord)
+    setRecords((current) => current.filter((item) => item.id !== editRecord.id))
+    setIsDialogOpen(false)
+    router.replace("/announces")
+    await load()
+  }, [editRecord, load, router])
 
   return (
     <div className="container space-y-4 p-[20px] no-scrollbar">
       <div className="flex items-center justify-between gap-4 no-scrollbar">
         <div className="no-scrollbar">
           <h1 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
-            Announcements
+            โน้ตประกาศ
           </h1>
           <p className="text-sm text-neutral-500">
-            New tiles are added to the top — older ones shift down.
+            อยู่ระหว่างการพัฒนา
           </p>
         </div>
-        <Button type="button" onClick={() => setIsDialogOpen(true)}>
-          <PlusIcon className="me-2 h-4 w-4" />
-          Add tile
-        </Button>
+        {user && (
+          <Button type="button" onClick={() => setIsDialogOpen(true)}>
+            <PlusIcon className="me-2 h-4 w-4" />
+            เพิ่มการ์ด
+          </Button>
+        )}
       </div>
 
       <BentoGrid className="lg:grid-cols-4">
@@ -1633,7 +1827,7 @@ export default function BentoDemo() {
           <p className="col-span-full text-sm text-red-600 dark:text-red-400">{loadError}</p>
         ) : features.length === 0 ? (
           <p className="col-span-full text-sm text-neutral-500">
-            No announcements yet. Add the first tile.
+            ยังไม่มีโน้ตประกาศ เพิ่มการ์ดแรกได้เลย
           </p>
         ) : (
           features.map((feature) => (
@@ -1653,8 +1847,10 @@ export default function BentoDemo() {
 
       <AddNoteDialog
         open={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={closeDialog}
         onSubmit={handlePost}
+        onDelete={editRecord ? handleDelete : undefined}
+        editRecord={editRecord}
         author={user}
         authorReady={authorReady}
       />

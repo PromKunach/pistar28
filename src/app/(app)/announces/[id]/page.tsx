@@ -16,11 +16,14 @@ import {
   CalendarClock,
   Link2,
   Loader2,
+  Pencil,
   Plus,
   Trash2,
   Type,
   Unlink,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -31,12 +34,32 @@ import { useCurrentUser } from "@/lib/userProfile"
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
+  canEditBlock,
+  createBoard,
   createTextBlock,
-  loadBoard,
-  saveBoard,
+  fetchBoard,
+  recordToBoardContent,
+  updateBoard,
   type BoardConnection,
   type BoardTextBlock,
 } from "@/lib/announcementBoard"
+
+function boardSaveErrorMessage(error: unknown) {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message: string }).message)
+    if (
+      message.includes("announcement_boards") &&
+      message.includes("does not exist")
+    ) {
+      return "ไม่พบตาราง announcement_boards กรุณารัน supabase/announcement_boards.sql ก่อน"
+    }
+    if (message.includes("row-level security")) {
+      return "ไม่มีสิทธิ์บันทึก ตรวจสอบนโยบาย RLS ใน Supabase"
+    }
+    return message
+  }
+  return "บันทึกบอร์ดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"
+}
 
 type Point = { x: number; y: number }
 type Size = { width: number; height: number }
@@ -45,14 +68,29 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-/** Keeps the board edges from drifting away from the viewport. */
-function clampPan(pan: Point, viewport: Size): Point {
-  const minX = Math.min(0, viewport.width - BOARD_WIDTH)
-  const minY = Math.min(0, viewport.height - BOARD_HEIGHT)
+/** Keeps the board inside the viewport; allows centering when zoomed out. */
+function clampPan(pan: Point, viewport: Size, zoom: number): Point {
+  const boardW = BOARD_WIDTH * zoom
+  const boardH = BOARD_HEIGHT * zoom
+  const minX = Math.min(0, viewport.width - boardW)
+  const maxX = Math.max(0, viewport.width - boardW)
+  const minY = Math.min(0, viewport.height - boardH)
+  const maxY = Math.max(0, viewport.height - boardH)
   return {
-    x: clamp(pan.x, minX, 0),
-    y: clamp(pan.y, minY, 0),
+    x: clamp(pan.x, minX, maxX),
+    y: clamp(pan.y, minY, maxY),
   }
+}
+
+function centerPan(viewport: Size, zoom: number): Point {
+  return {
+    x: (viewport.width - BOARD_WIDTH * zoom) / 2,
+    y: (viewport.height - BOARD_HEIGHT * zoom) / 2,
+  }
+}
+
+function viewportCenter(viewport: Size): Point {
+  return { x: viewport.width / 2, y: viewport.height / 2 }
 }
 
 function formatCreatedAt(value: string) {
@@ -70,6 +108,27 @@ function blockLabel(block: BoardTextBlock) {
 type BlockRect = { x: number; y: number; w: number; h: number }
 
 const DEFAULT_BLOCK_HEIGHT = 128
+const MIN_ZOOM = 0.35
+const MAX_ZOOM = 2
+const DEFAULT_ZOOM = 1
+
+function zoomAtPoint(
+  pan: Point,
+  zoom: number,
+  nextZoom: number,
+  pointer: Point
+): Point {
+  const boardX = (pointer.x - pan.x) / zoom
+  const boardY = (pointer.y - pan.y) / zoom
+  return {
+    x: pointer.x - boardX * nextZoom,
+    y: pointer.y - boardY * nextZoom,
+  }
+}
+
+function clampZoom(value: number) {
+  return clamp(value, MIN_ZOOM, MAX_ZOOM)
+}
 
 function blockRect(block: BoardTextBlock, heightPx: number): BlockRect {
   return {
@@ -177,21 +236,26 @@ type BlockDrag = {
   originX: number
   originY: number
   heightFraction: number
+  moved: boolean
 }
 
 function TextBlock({
   block,
-  isSelected,
+  isExpanded,
+  canEdit,
   onPointerDown,
   onPointerUp,
   onSelect,
+  onEdit,
   onMeasure,
 }: {
   block: BoardTextBlock
-  isSelected: boolean
+  isExpanded: boolean
+  canEdit: boolean
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
   onSelect: () => void
+  onEdit: () => void
   onMeasure: (height: number) => void
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -206,7 +270,7 @@ function TextBlock({
     const observer = new ResizeObserver(report)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [onMeasure, block.text, isSelected])
+  }, [onMeasure, block.text, block.description, isExpanded, canEdit])
 
   return (
     <div
@@ -224,10 +288,10 @@ function TextBlock({
         fontSize: block.fontSize,
       }}
       className={cn(
-        "absolute min-h-32 cursor-move rounded-lg border bg-white p-3 shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-shadow dark:bg-neutral-900 dark:shadow-[0_4px_20px_rgba(0,0,0,0.45)]",
-        isSelected
-          ? "border-neutral-900 shadow-[0_4px_10px_rgba(0,0,0,0.1),0_16px_40px_rgba(0,0,0,0.18)] dark:border-neutral-100 dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
-          : "border-transparent hover:border-neutral-300 hover:shadow-[0_4px_10px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.55)]"
+        "absolute min-h-32 cursor-move rounded-lg border bg-white p-3 shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-[box-shadow,border-color,transform] duration-300 ease-out dark:bg-neutral-900 dark:shadow-[0_4px_20px_rgba(0,0,0,0.45)]",
+        isExpanded && "z-10 scale-[1.02] border-neutral-900 shadow-[0_4px_10px_rgba(0,0,0,0.1),0_16px_40px_rgba(0,0,0,0.18)] dark:border-neutral-100 dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
+        !isExpanded &&
+          "border-transparent hover:border-neutral-300 hover:shadow-[0_4px_10px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.55)]"
       )}
     >
       <div className="mb-2 flex items-center gap-2 border-b border-neutral-200/80 pb-2">
@@ -240,16 +304,58 @@ function TextBlock({
         ) : (
           <div className="h-7 w-7 shrink-0 rounded-full bg-neutral-200" />
         )}
-        <span className="truncate text-xs font-medium text-neutral-600">
+        <span className="truncate text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {block.author.displayName}
         </span>
       </div>
 
-      <p className="min-h-12 leading-snug whitespace-pre-wrap break-words select-none">
-        {block.text || (
-          <span className="text-neutral-400">ยังไม่มีข้อความ</span>
+      <div className="flex min-h-16 flex-col items-center justify-center px-1">
+        <p className="w-full text-center leading-snug whitespace-pre-wrap break-words select-none">
+          {block.text || (
+            <span className="text-neutral-400">ยังไม่มีข้อความ</span>
+          )}
+        </p>
+      </div>
+
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,margin-top,opacity] duration-300 ease-out",
+          isExpanded
+            ? "mt-2.5 grid-rows-[1fr] opacity-100"
+            : "mt-0 grid-rows-[0fr] opacity-0"
         )}
-      </p>
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-neutral-200/80 pt-2.5 dark:border-neutral-700/80">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-neutral-500 dark:text-neutral-400">
+              {block.description.trim() || (
+                <span className="text-neutral-400 dark:text-neutral-500">
+                  ยังไม่มีคำอธิบาย
+                </span>
+              )}
+            </p>
+            {canEdit && (
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit()
+                }}
+                className={cn(
+                  "mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-100 active:scale-[0.98] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700",
+                  isExpanded
+                    ? "translate-y-0 opacity-100 delay-100"
+                    : "pointer-events-none translate-y-1 opacity-0"
+                )}
+              >
+                <Pencil className="h-3 w-3" />
+                แก้ไข
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -257,34 +363,44 @@ function TextBlock({
 export default function AnnouncementBoardPage() {
   const params = useParams<{ id: string }>()
   const announcementId = params.id
-  const { user } = useCurrentUser()
+  const { user, ready: authorReady } = useCurrentUser()
 
   const viewportRef = useRef<HTMLDivElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const panDragRef = useRef<PanDrag | null>(null)
   const blockDragRef = useRef<BlockDrag | null>(null)
   const panRef = useRef<Point>({ x: 0, y: 0 })
+  const zoomRef = useRef(DEFAULT_ZOOM)
   const viewportSizeRef = useRef<Size>({ width: 0, height: 0 })
   const blocksRef = useRef<BoardTextBlock[]>([])
 
   const [viewport, setViewport] = useState<Size>({ width: 0, height: 0 })
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [blocks, setBlocks] = useState<BoardTextBlock[]>([])
   const [connections, setConnections] = useState<BoardConnection[]>([])
   const [blockHeights, setBlockHeights] = useState<Record<string, number>>({})
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [isPanelEditing, setIsPanelEditing] = useState(false)
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null)
   const [title, setTitle] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [boardExists, setBoardExists] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const selectedIdRef = useRef<string | null>(null)
+  const hasCenteredRef = useRef(false)
 
   panRef.current = pan
+  zoomRef.current = zoom
   blocksRef.current = blocks
   viewportSizeRef.current = viewport
+  selectedIdRef.current = selectedId
 
   useEffect(() => {
     const element = viewportRef.current
@@ -293,24 +409,87 @@ export default function AnnouncementBoardPage() {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
       setViewport({ width, height })
-      setPan((current) => clampPan(current, { width, height }))
+      setPan((current) => clampPan(current, { width, height }, zoomRef.current))
     })
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
+    if (viewport.width === 0 || viewport.height === 0) return
+    if (hasCenteredRef.current) return
+    hasCenteredRef.current = true
+    setPan(centerPan(viewport, zoomRef.current))
+  }, [viewport])
+
+  const applyZoom = useCallback((nextZoom: number) => {
+    const clampedZoom = clampZoom(nextZoom)
+    const viewportSize = viewportSizeRef.current
+    const anchor = viewportCenter(viewportSize)
+
+    setPan((currentPan) =>
+      clampPan(
+        zoomAtPoint(currentPan, zoomRef.current, clampedZoom, anchor),
+        viewportSize,
+        clampedZoom
+      )
+    )
+    setZoom(clampedZoom)
+  }, [])
+
+  const resetView = useCallback(() => {
+    const viewportSize = viewportSizeRef.current
+    setZoom(DEFAULT_ZOOM)
+    setPan(centerPan(viewportSize, DEFAULT_ZOOM))
+  }, [])
+
+  useEffect(() => {
+    const element = viewportRef.current
+    if (!element) return
+
+    const onWheel = (event: WheelEvent) => {
+      if ((event.target as HTMLElement).closest("[data-board-panel]")) return
+
+      event.preventDefault()
+      const factor = event.deltaY < 0 ? 1.08 : 1 / 1.08
+      applyZoom(zoomRef.current * factor)
+    }
+
+    element.addEventListener("wheel", onWheel, { passive: false })
+    return () => element.removeEventListener("wheel", onWheel)
+  }, [applyZoom])
+
+  useEffect(() => {
     let cancelled = false
 
     async function load() {
       setIsLoading(true)
-      const content = await loadBoard(announcementId)
-      if (!cancelled) {
-        setBlocks(content.blocks)
-        setConnections(content.connections)
-        setSavedAt(content.updatedAt)
-        setIsDirty(false)
-        setIsLoading(false)
+      try {
+        const record = await fetchBoard(announcementId)
+        if (!cancelled) {
+          if (record) {
+            const content = recordToBoardContent(record)
+            setBlocks(content.blocks)
+            setConnections(content.connections)
+            setSavedAt(content.updatedAt)
+            setBoardExists(true)
+          } else {
+            setBlocks([])
+            setConnections([])
+            setSavedAt(null)
+            setBoardExists(false)
+          }
+          setIsDirty(false)
+        }
+      } catch {
+        if (!cancelled) {
+          setBlocks([])
+          setConnections([])
+          setSavedAt(null)
+          setBoardExists(false)
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
       }
 
       try {
@@ -361,16 +540,45 @@ export default function AnnouncementBoardPage() {
     setIsDirty(true)
   }, [])
 
-  const changeSelection = useCallback(
-    (id: string | null) => {
-      setSelectedId((current) => {
-        if (current && current !== id) pruneEmptyBlock(current)
-        return id
-      })
-      setDeleteConfirmOpen(false)
-    },
-    [pruneEmptyBlock]
-  )
+  const expandedIdsRef = useRef(expandedIds)
+  expandedIdsRef.current = expandedIds
+
+  const expandBlock = useCallback((id: string) => {
+    setExpandedIds((current) => {
+      if (current.has(id)) return current
+      const next = new Set(current)
+      next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleBlockExpanded = useCallback((id: string) => {
+    const wasExpanded = expandedIdsRef.current.has(id)
+    setExpandedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+    return !wasExpanded
+  }, [])
+
+  const openPanel = useCallback((id: string, edit: boolean) => {
+    const previous = selectedIdRef.current
+    if (previous && previous !== id) pruneEmptyBlock(previous)
+    expandBlock(id)
+    setSelectedId(id)
+    setIsPanelEditing(edit)
+    setDeleteConfirmOpen(false)
+  }, [expandBlock, pruneEmptyBlock])
+
+  const closePanel = useCallback(() => {
+    const previous = selectedIdRef.current
+    if (previous) pruneEmptyBlock(previous)
+    setSelectedId(null)
+    setIsPanelEditing(false)
+    setDeleteConfirmOpen(false)
+  }, [pruneEmptyBlock])
 
   const deleteBlock = useCallback((id: string) => {
     setBlocks((current) => current.filter((block) => block.id !== id))
@@ -380,6 +588,12 @@ export default function AnnouncementBoardPage() {
       )
     )
     setSelectedId((current) => (current === id ? null : current))
+    setExpandedIds((current) => {
+      if (!current.has(id)) return current
+      const next = new Set(current)
+      next.delete(id)
+      return next
+    })
     setConnectingFromId((current) => (current === id ? null : current))
     setBlockHeights((current) => {
       if (!(id in current)) return current
@@ -399,8 +613,8 @@ export default function AnnouncementBoardPage() {
 
   const addTextBlock = useCallback(() => {
     // Drop the new block near the middle of whatever part of the board is visible.
-    const centerX = (-pan.x + viewport.width / 2) / BOARD_WIDTH
-    const centerY = (-pan.y + viewport.height / 2) / BOARD_HEIGHT
+    const centerX = (-pan.x + viewport.width / 2) / (BOARD_WIDTH * zoom)
+    const centerY = (-pan.y + viewport.height / 2) / (BOARD_HEIGHT * zoom)
     const block = createTextBlock(clamp(centerX - 0.05, 0, 0.9), clamp(centerY - 0.03, 0, 0.94), {
       studentId: user?.studentId ?? "ไม่ระบุ",
       displayName: user?.displayName ?? "ผู้เยี่ยมชม",
@@ -408,20 +622,29 @@ export default function AnnouncementBoardPage() {
     })
 
     setBlocks((current) => [...current, block])
-    changeSelection(block.id)
+    openPanel(block.id, true)
     setIsDirty(true)
-  }, [pan, viewport, user, changeSelection])
+  }, [pan, viewport, user, openPanel, zoom])
 
   const selectBlock = useCallback(
     (id: string) => {
       if (!connectingFromId) {
-        changeSelection(id)
+        const nowExpanded = toggleBlockExpanded(id)
+        if (!nowExpanded && selectedIdRef.current === id) {
+          closePanel()
+        } else if (
+          nowExpanded &&
+          selectedIdRef.current &&
+          selectedIdRef.current !== id
+        ) {
+          closePanel()
+        }
         return
       }
 
       if (connectingFromId === id) {
         setConnectingFromId(null)
-        changeSelection(id)
+        openPanel(id, false)
         return
       }
 
@@ -444,40 +667,56 @@ export default function AnnouncementBoardPage() {
         ]
       })
       setConnectingFromId(null)
-      changeSelection(id)
+      openPanel(id, false)
       setIsDirty(true)
     },
-    [connectingFromId, changeSelection]
+    [connectingFromId, toggleBlockExpanded, openPanel, closePanel]
   )
+
+  const openBlockEditor = useCallback(
+    (id: string) => {
+      openPanel(id, true)
+    },
+    [openPanel]
+  )
+
+  const blockClickRef = useRef<{ blockId: string; moved: boolean } | null>(null)
 
   const handleSave = useCallback(async () => {
     setIsSaving(true)
+    setSaveError(null)
     try {
-      const content = await saveBoard(announcementId, blocks, connections)
-      setSavedAt(content.updatedAt)
+      const input = { announcementId, blocks, connections }
+      const record = boardExists
+        ? await updateBoard(input)
+        : await createBoard(input)
+      setSavedAt(record.updated_at)
+      setBoardExists(true)
       setIsDirty(false)
+    } catch (error) {
+      setSaveError(boardSaveErrorMessage(error))
     } finally {
       setIsSaving(false)
     }
-  }, [announcementId, blocks, connections])
+  }, [announcementId, blocks, connections, boardExists])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) return
       if (event.key === "Escape") {
-        changeSelection(null)
+        closePanel()
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [changeSelection])
+  }, [closePanel])
 
   useEffect(() => {
-    if (!selectedId) return
+    if (!selectedId || !isPanelEditing) return
     const block = blocks.find((item) => item.id === selectedId)
     if (!block || block.text.trim()) return
     messageRef.current?.focus()
-  }, [selectedId, blocks])
+  }, [selectedId, isPanelEditing, blocks])
 
   const startBlockDrag = (
     event: ReactPointerEvent<HTMLDivElement>,
@@ -495,7 +734,9 @@ export default function AnnouncementBoardPage() {
       originX: block.x,
       originY: block.y,
       heightFraction: element.offsetHeight / BOARD_HEIGHT,
+      moved: false,
     }
+    blockClickRef.current = { blockId: block.id, moved: false }
   }
 
   const endPointer = useCallback((event: ReactPointerEvent | PointerEvent) => {
@@ -530,10 +771,23 @@ export default function AnnouncementBoardPage() {
     (event: PointerEvent) => {
       const blockDrag = blockDragRef.current
       if (blockDrag?.pointerId === event.pointerId) {
+        if (
+          Math.hypot(
+            event.clientX - blockDrag.startX,
+            event.clientY - blockDrag.startY
+          ) > 4
+        ) {
+          blockDrag.moved = true
+          if (blockClickRef.current?.blockId === blockDrag.blockId) {
+            blockClickRef.current.moved = true
+          }
+        }
+
+        const scale = BOARD_WIDTH * zoomRef.current
         const nextX =
-          blockDrag.originX + (event.clientX - blockDrag.startX) / BOARD_WIDTH
+          blockDrag.originX + (event.clientX - blockDrag.startX) / scale
         const nextY =
-          blockDrag.originY + (event.clientY - blockDrag.startY) / BOARD_HEIGHT
+          blockDrag.originY + (event.clientY - blockDrag.startY) / (BOARD_HEIGHT * zoomRef.current)
         const block = blocksRef.current.find((item) => item.id === blockDrag.blockId)
         const maxX = 1 - (block?.width ?? 0)
         const maxY = 1 - blockDrag.heightFraction
@@ -554,7 +808,8 @@ export default function AnnouncementBoardPage() {
             x: panDrag.origin.x + (event.clientX - panDrag.startX),
             y: panDrag.origin.y + (event.clientY - panDrag.startY),
           },
-          viewportSizeRef.current
+          viewportSizeRef.current,
+          zoomRef.current
         )
       )
     },
@@ -581,7 +836,7 @@ export default function AnnouncementBoardPage() {
     if ((event.target as HTMLElement).closest("[data-board-panel]")) return
 
     event.preventDefault()
-    changeSelection(null)
+    closePanel()
     viewportRef.current?.setPointerCapture(event.pointerId)
     panDragRef.current = {
       pointerId: event.pointerId,
@@ -597,6 +852,8 @@ export default function AnnouncementBoardPage() {
   }
 
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null
+  const canEditSelected = selectedBlock ? canEditBlock(selectedBlock, user) : false
+  const canAddBlocks = authorReady && Boolean(user)
 
   const selectedChildBlocks = useMemo(() => {
     if (!selectedBlock) return []
@@ -636,12 +893,17 @@ export default function AnnouncementBoardPage() {
               {title ?? "พื้นที่ทำงาน"}
             </h1>
             <p className="text-xs text-neutral-500">
-              ลากพื้นที่เพื่อเลื่อนดู · คลิกข้อความเพื่อแก้ไขในแผงด้านข้าง
+              ลากพื้นที่เพื่อเลื่อนดู · ล้อเมาส์เพื่อซูม · คลิกข้อความเพื่อเปิด/ปิดคำอธิบาย
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {saveError && (
+            <span className="max-w-xs text-xs text-red-600 dark:text-red-400">
+              {saveError}
+            </span>
+          )}
           <span className="text-xs text-neutral-500">
             {isDirty
               ? "ยังไม่ได้บันทึก"
@@ -649,11 +911,24 @@ export default function AnnouncementBoardPage() {
                 ? `บันทึกแล้ว ${new Date(savedAt).toLocaleTimeString("th-TH")}`
                 : "ยังไม่มีการเปลี่ยนแปลง"}
           </span>
-          <Button type="button" variant="outline" onClick={addTextBlock}>
-            <Plus className="me-2 h-4 w-4" />
-            เพิ่มข้อความ
-          </Button>
-          <Button type="button" onClick={() => void handleSave()} disabled={isSaving}>
+          {canAddBlocks && (
+            <Button
+              variant="outline"
+              render={<Link href={`/announces?edit=${announcementId}`} />}
+              nativeButton={false}
+            >
+              <Pencil className="me-2 h-4 w-4" />
+              แก้ไขบอร์ด
+            </Button>
+          )}
+          {canAddBlocks && (
+            <Button type="button" variant="outline" onClick={addTextBlock}>
+              <Plus className="me-2 h-4 w-4" />
+              เพิ่มข้อความ
+            </Button>
+          )}
+          {canAddBlocks && (
+            <Button type="button" onClick={() => void handleSave()} disabled={isSaving}>
             {isSaving ? (
               <>
                 <Loader2 className="me-2 h-4 w-4 animate-spin" />
@@ -663,6 +938,7 @@ export default function AnnouncementBoardPage() {
               "บันทึก"
             )}
           </Button>
+          )}
         </div>
       </header>
 
@@ -672,7 +948,7 @@ export default function AnnouncementBoardPage() {
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         className={cn(
-          "relative flex-1 touch-none overflow-hidden bg-neutral-100 dark:bg-neutral-900",
+          "relative flex-1 touch-none overflow-hidden bg-white dark:bg-neutral-950",
           isPanning ? "cursor-grabbing" : "cursor-default"
         )}
       >
@@ -682,12 +958,41 @@ export default function AnnouncementBoardPage() {
           </div>
         )}
 
+        <div className="absolute bottom-4 left-4 z-40 flex items-center gap-1 rounded-xl border border-neutral-200 bg-white/95 p-1 shadow-lg backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-900/95">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="ซูมออก"
+            onClick={() => applyZoom(zoom / 1.2)}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <button
+            type="button"
+            onClick={() => resetView()}
+            className="min-w-12 rounded-md px-2 py-1 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="ซูมเข้า"
+            onClick={() => applyZoom(zoom * 1.2)}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+        </div>
+
         <div
           data-board-surface
           style={{
             width: BOARD_WIDTH,
             height: BOARD_HEIGHT,
-            transform: `translate3d(${pan.x}px, ${pan.y}px, 0)`,
+            transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
+            transformOrigin: "0 0",
             backgroundImage:
               "radial-gradient(circle, rgba(0,0,0,.12) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
@@ -731,10 +1036,20 @@ export default function AnnouncementBoardPage() {
             <TextBlock
               key={block.id}
               block={block}
-              isSelected={selectedId === block.id}
+              isExpanded={expandedIds.has(block.id)}
+              canEdit={canEditBlock(block, user)}
               onPointerDown={(event) => startBlockDrag(event, block)}
               onPointerUp={handlePointerUp}
-              onSelect={() => selectBlock(block.id)}
+              onSelect={() => {
+                if (
+                  blockClickRef.current?.blockId === block.id &&
+                  blockClickRef.current.moved
+                ) {
+                  return
+                }
+                selectBlock(block.id)
+              }}
+              onEdit={() => openBlockEditor(block.id)}
               onMeasure={(height) => reportBlockHeight(block.id, height)}
             />
           ))}
@@ -744,7 +1059,7 @@ export default function AnnouncementBoardPage() {
           <aside
             data-board-panel
             onPointerDown={(event) => event.stopPropagation()}
-            className="absolute top-4 right-4 z-40 flex max-h-[calc(100%-2rem)] w-[min(24rem,calc(100%-2rem))] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+            className="absolute top-4 right-4 z-40 flex max-h-[calc(100%-2rem)] w-[min(24rem,calc(100%-2rem))] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl animate-in fade-in slide-in-from-right-4 duration-300 dark:border-neutral-700 dark:bg-neutral-900"
           >
             <div className="border-b border-neutral-200 px-6 py-5 dark:border-neutral-800">
               <div className="flex items-start justify-between gap-3">
@@ -772,7 +1087,7 @@ export default function AnnouncementBoardPage() {
                   variant="ghost"
                   size="icon-sm"
                   aria-label="ปิดรายละเอียด"
-                  onClick={() => changeSelection(null)}
+                  onClick={() => closePanel()}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -782,31 +1097,51 @@ export default function AnnouncementBoardPage() {
             <div className="flex-1 space-y-7 overflow-y-auto px-6 pt-7 pb-6">
               <div className="space-y-3.5">
                 <Label htmlFor={`message-${selectedBlock.id}`}>ข้อความ</Label>
-                <textarea
-                  ref={messageRef}
-                  id={`message-${selectedBlock.id}`}
-                  value={selectedBlock.text}
-                  onChange={(event) =>
-                    updateBlock(selectedBlock.id, { text: event.target.value })
-                  }
-                  placeholder="พิมพ์ข้อความ..."
-                  rows={4}
-                  className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm leading-relaxed text-neutral-800 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus-visible:ring-neutral-600"
-                />
+                {isPanelEditing ? (
+                  <textarea
+                    ref={messageRef}
+                    id={`message-${selectedBlock.id}`}
+                    value={selectedBlock.text}
+                    onChange={(event) =>
+                      updateBlock(selectedBlock.id, { text: event.target.value })
+                    }
+                    placeholder="พิมพ์ข้อความ..."
+                    rows={4}
+                    className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm leading-relaxed text-neutral-800 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus-visible:ring-neutral-600"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl bg-neutral-50 px-4 py-4 dark:bg-neutral-800">
+                    <p className="max-h-32 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
+                      {selectedBlock.text || (
+                        <span className="text-neutral-400">ยังไม่มีข้อความ</span>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3.5">
                 <Label htmlFor={`description-${selectedBlock.id}`}>คำอธิบาย</Label>
-                <textarea
-                  id={`description-${selectedBlock.id}`}
-                  value={selectedBlock.description}
-                  onChange={(event) =>
-                    updateBlock(selectedBlock.id, { description: event.target.value })
-                  }
-                  placeholder="เพิ่มคำอธิบายสั้น ๆ สำหรับข้อความนี้..."
-                  rows={4}
-                  className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm leading-relaxed text-neutral-800 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus-visible:ring-neutral-600"
-                />
+                {isPanelEditing ? (
+                  <textarea
+                    id={`description-${selectedBlock.id}`}
+                    value={selectedBlock.description}
+                    onChange={(event) =>
+                      updateBlock(selectedBlock.id, { description: event.target.value })
+                    }
+                    placeholder="เพิ่มคำอธิบายสั้น ๆ สำหรับข้อความนี้..."
+                    rows={4}
+                    className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm leading-relaxed text-neutral-800 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus-visible:ring-neutral-600"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl bg-neutral-50 px-4 py-4 dark:bg-neutral-800">
+                    <p className="max-h-32 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-neutral-600 dark:text-neutral-300">
+                      {selectedBlock.description.trim() || (
+                        <span className="text-neutral-400">ยังไม่มีคำอธิบาย</span>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-5 border-t border-neutral-200 pt-7 dark:border-neutral-800">
@@ -818,11 +1153,12 @@ export default function AnnouncementBoardPage() {
                         <li key={connectionId} className="group flex items-stretch gap-2">
                           <button
                             type="button"
-                            onClick={() => changeSelection(block.id)}
+                            onClick={() => openPanel(block.id, false)}
                             className="min-w-0 flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-sm leading-snug text-neutral-800 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
                           >
                             {blockLabel(block)}
                           </button>
+                          {canEditSelected && (
                           <button
                             type="button"
                             aria-label={`ยกเลิกการเชื่อมจาก ${blockLabel(block)}`}
@@ -831,6 +1167,7 @@ export default function AnnouncementBoardPage() {
                           >
                             <Unlink className="h-4 w-4" />
                           </button>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -849,11 +1186,12 @@ export default function AnnouncementBoardPage() {
                         <li key={connectionId} className="group flex items-stretch gap-2">
                           <button
                             type="button"
-                            onClick={() => changeSelection(block.id)}
+                            onClick={() => openPanel(block.id, false)}
                             className="min-w-0 flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left text-sm leading-snug text-neutral-800 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
                           >
                             {blockLabel(block)}
                           </button>
+                          {canEditSelected && (
                           <button
                             type="button"
                             aria-label={`ยกเลิกการเชื่อมจาก ${blockLabel(block)}`}
@@ -862,6 +1200,7 @@ export default function AnnouncementBoardPage() {
                           >
                             <Unlink className="h-4 w-4" />
                           </button>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -880,19 +1219,44 @@ export default function AnnouncementBoardPage() {
             </div>
 
             <div className="space-y-3 border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
+              {canEditSelected && (
+                isPanelEditing ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setIsPanelEditing(false)}
+                  >
+                    เสร็จสิ้น
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => openBlockEditor(selectedBlock.id)}
+                  >
+                    <Pencil className="me-2 h-4 w-4" />
+                    แก้ไข
+                  </Button>
+                )
+              )}
+
+              {canEditSelected && (
               <Button
                 type="button"
                 className="w-full"
                 onClick={() => {
                   setConnectingFromId(selectedBlock.id)
-                  changeSelection(null)
+                  closePanel()
                 }}
               >
                 <Link2 className="me-2 h-4 w-4" />
                 เชื่อมต่อ
               </Button>
+              )}
 
-              {!deleteConfirmOpen ? (
+              {canEditSelected && (
+              !deleteConfirmOpen ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -932,6 +1296,7 @@ export default function AnnouncementBoardPage() {
                     </Button>
                   </div>
                 </div>
+              )
               )}
             </div>
           </aside>

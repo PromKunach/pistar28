@@ -22,8 +22,14 @@ create index if not exists announcements_created_at_idx
 
 alter table public.announcements enable row level security;
 
-create policy "announcements_select_authenticated"
-  on public.announcements for select to authenticated using (true);
+-- Anyone can read announcements (logged in or not).
+drop policy if exists "announcements_select_authenticated" on public.announcements;
+drop policy if exists "announcements_select_public" on public.announcements;
+
+create policy "announcements_select_public"
+  on public.announcements for select
+  to anon, authenticated
+  using (true);
 
 create policy "announcements_insert_own"
   on public.announcements for insert to authenticated

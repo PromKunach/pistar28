@@ -28,7 +28,42 @@ import Image from "next/image";
 type SubItem = {
   label: string;
   href: string;
+  /** Opens in a new tab. External URLs (http/https) do this automatically. */
+  openInNewTab?: boolean;
 };
+
+function isExternalHref(href: string) {
+  return /^https?:\/\//i.test(href.trim());
+}
+
+function NavSubLink({
+  href,
+  label,
+  className,
+  openInNewTab,
+}: SubItem & { className?: string }) {
+  const trimmedHref = href.trim();
+  const external = isExternalHref(trimmedHref) || openInNewTab;
+
+  if (external) {
+    return (
+      <a
+        href={trimmedHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
+        {label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={trimmedHref} className={className}>
+      {label}
+    </Link>
+  );
+}
 
 type NavItem = {
   label: string;
@@ -75,7 +110,10 @@ const NAV_BUILD: NavItem[] = [
     icon: Wrench,
     expandable: true,
     href: "/tools",
-    children: [{ label: "เครื่องมือทั้งหมด", href: "/tools" }],
+    children: [
+      { label: "Cursor", href: "https://cursor.com/dashboard/spending" },
+      { label: "Supabase", href: "https://supabase.com/dashboard/project/suqeemkfbmbslgfkqvph" },
+    ],
   },
   {
     label: "ติดต่อ",
@@ -154,7 +192,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.4.2
+            version : 1.4.3
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
@@ -243,13 +281,11 @@ export default function Sidebar({
                         >
                           <ul className="overflow-hidden pl-9">
                             {item.children.map((sub) => (
-                              <li key={sub.href}>
-                                <Link
-                                  href={sub.href}
+                              <li key={`${sub.label}-${sub.href}`}>
+                                <NavSubLink
+                                  {...sub}
                                   className="block py-1.5 text-sm text-slate-500 hover:text-slate-800"
-                                >
-                                  {sub.label}
-                                </Link>
+                                />
                               </li>
                             ))}
                           </ul>

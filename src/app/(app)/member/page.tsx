@@ -189,6 +189,8 @@ function CardBack({ profile }: { profile: Profile }) {
               {profile.full_name_th}
             </p>
             <p className="truncate text-xs text-white/55">({profile.nickname_th})</p>
+            <p className="truncate text-xs text-white/55">({profile.pbri_id})</p>
+
           </div>
         </div>
       </div>
