@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -413,7 +413,7 @@ function DockButton({
   );
 }
 
-export default function HighlighterDemo() {
+function SectionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState(() =>
@@ -930,5 +930,21 @@ export default function HighlighterDemo() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function SectionPageFallback() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center text-sm text-neutral-500">
+      Loading section…
+    </div>
+  );
+}
+
+export default function SectionPage() {
+  return (
+    <Suspense fallback={<SectionPageFallback />}>
+      <SectionPageContent />
+    </Suspense>
   );
 }
