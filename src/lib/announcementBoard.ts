@@ -21,6 +21,12 @@ export type BoardTextBlock = {
   id: string
   text: string
   description: string
+  /** External URL opened by the link node; empty string when unset. */
+  link: string
+  /** Offset from the default link node position (board width fraction). */
+  linkNodeOffsetX?: number
+  /** Offset from the default link node position (board height fraction). */
+  linkNodeOffsetY?: number
   /** 0–1, fraction of board width */
   x: number
   /** 0–1, fraction of board height */
@@ -95,6 +101,7 @@ export function createTextBlock(
     id: crypto.randomUUID(),
     text: "",
     description: "",
+    link: "",
     x,
     y,
     width: DEFAULT_BLOCK_WIDTH,
@@ -135,6 +142,11 @@ export function normalizeBlocks(raw: unknown): BoardTextBlock[] {
     color: block.color || DEFAULT_BLOCK_COLOR,
     fontSize: block.fontSize || DEFAULT_BLOCK_FONT_SIZE,
     description: block.description ?? "",
+    link: typeof block.link === "string" ? block.link : "",
+    linkNodeOffsetX:
+      typeof block.linkNodeOffsetX === "number" ? block.linkNodeOffsetX : 0,
+    linkNodeOffsetY:
+      typeof block.linkNodeOffsetY === "number" ? block.linkNodeOffsetY : 0,
     author: block.author ?? {
       studentId: "ไม่ระบุ",
       displayName: "ไม่ทราบชื่อ",

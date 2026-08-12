@@ -16,6 +16,7 @@ import {
   CalendarClock,
   Link2,
   Loader2,
+  Paperclip,
   Pencil,
   Plus,
   Trash2,
@@ -28,6 +29,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { fetchAnnouncement } from "@/lib/announcements"
 import { useCurrentUser } from "@/lib/userProfile"
@@ -190,6 +192,57 @@ function bezierPath(
   return `M ${start.x} ${start.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`
 }
 
+const LINK_NODE_SIZE = 44
+const LINK_NODE_OFFSET = 56
+
+function normalizeLinkUrl(value: string): string | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}
+
+function defaultLinkNodeCenter(block: BoardTextBlock, heightPx: number): Point {
+  const rect = blockRect(block, heightPx)
+  return {
+    x: rect.x + rect.w + LINK_NODE_OFFSET + LINK_NODE_SIZE / 2,
+    y: rect.y + rect.h / 2,
+  }
+}
+
+function resolveLinkNodeCenter(block: BoardTextBlock, heightPx: number): Point {
+  const base = defaultLinkNodeCenter(block, heightPx)
+  return {
+    x: base.x + (block.linkNodeOffsetX ?? 0) * BOARD_WIDTH,
+    y: base.y + (block.linkNodeOffsetY ?? 0) * BOARD_HEIGHT,
+  }
+}
+
+function linkConnectionGeometry(block: BoardTextBlock, heightPx: number) {
+  const rect = blockRect(block, heightPx)
+  const node = resolveLinkNodeCenter(block, heightPx)
+  const nodeRect: BlockRect = {
+    x: node.x - LINK_NODE_SIZE / 2,
+    y: node.y - LINK_NODE_SIZE / 2,
+    w: LINK_NODE_SIZE,
+    h: LINK_NODE_SIZE,
+  }
+  const start = edgeAnchor(rect, node)
+  const end = edgeAnchor(nodeRect, rectCenter(rect))
+
+  return {
+    path: bezierPath(
+      start,
+      edgeOutward(start, rect),
+      end,
+      edgeOutward(end, nodeRect)
+    ),
+    start,
+    end,
+    node,
+  }
+}
+
 function connectionGeometry(
   from: BoardTextBlock,
   to: BoardTextBlock,
@@ -239,6 +292,71 @@ type BlockDrag = {
   moved: boolean
 }
 
+type LinkNodeDrag = {
+  pointerId: number
+  blockId: string
+  startX: number
+  startY: number
+  originOffsetX: number
+  originOffsetY: number
+  moved: boolean
+}
+
+function LinkNode({
+  blockId,
+  center,
+  url,
+  isPulsing,
+  canDrag,
+  onDragStart,
+  onOpen,
+}: {
+  blockId: string
+  center: Point
+  url: string
+  isPulsing: boolean
+  canDrag: boolean
+  onDragStart: (event: ReactPointerEvent<HTMLButtonElement>) => void
+  onOpen: () => void
+}) {
+  const x = center.x - LINK_NODE_SIZE / 2
+  const y = center.y - LINK_NODE_SIZE / 2
+
+  return (
+    <button
+      type="button"
+      data-link-node
+      data-link-node-id={blockId}
+      aria-label="เปิดลิงก์"
+      title={url}
+      style={{
+        left: x,
+        top: y,
+        width: LINK_NODE_SIZE,
+        height: LINK_NODE_SIZE,
+      }}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+        if (canDrag) onDragStart(event)
+      }}
+      onClick={(event) => {
+        event.stopPropagation()
+        onOpen()
+      }}
+      className={cn(
+        "link-node absolute z-20 overflow-hidden rounded-full border border-neutral-200/80 bg-white shadow-md transition-transform duration-150 ease-out",
+        canDrag ? "cursor-move hover:scale-105 active:scale-95" : "cursor-pointer hover:scale-105 active:scale-95",
+        isPulsing && "scale-90"
+      )}
+    >
+      <span className="link-node-shimmer pointer-events-none absolute inset-0" aria-hidden="true" />
+      <span className="relative z-10 flex h-full w-full items-center justify-center bg-white/80">
+        <Paperclip className="h-4 w-4 text-neutral-700" strokeWidth={2.25} />
+      </span>
+    </button>
+  )
+}
+
 function TextBlock({
   block,
   isExpanded,
@@ -270,7 +388,7 @@ function TextBlock({
     const observer = new ResizeObserver(report)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [onMeasure, block.text, block.description, isExpanded, canEdit])
+  }, [onMeasure, block.text, block.description, isExpanded])
 
   return (
     <div
@@ -294,7 +412,27 @@ function TextBlock({
           "border-transparent hover:border-neutral-300 hover:shadow-[0_4px_10px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.55)]"
       )}
     >
-      <div className="mb-2 flex items-center gap-2 border-b border-neutral-200/80 pb-2">
+      {isExpanded && canEdit && (
+        <button
+          type="button"
+          aria-label="แก้ไขข้อความ"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit()
+          }}
+          className={cn(
+            "absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm transition-all duration-200 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800/95 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-neutral-100",
+            isExpanded
+              ? "translate-y-0 opacity-100 delay-100"
+              : "pointer-events-none translate-y-1 opacity-0"
+          )}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      <div className="mb-2 flex items-center gap-2 border-b border-neutral-200/80 pb-2 pe-8">
         {block.author.avatarUrl ? (
           <img
             src={block.author.avatarUrl}
@@ -334,25 +472,6 @@ function TextBlock({
                 </span>
               )}
             </p>
-            {canEdit && (
-              <button
-                type="button"
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit()
-                }}
-                className={cn(
-                  "mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-100 active:scale-[0.98] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700",
-                  isExpanded
-                    ? "translate-y-0 opacity-100 delay-100"
-                    : "pointer-events-none translate-y-1 opacity-0"
-                )}
-              >
-                <Pencil className="h-3 w-3" />
-                แก้ไข
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -369,6 +488,8 @@ export default function AnnouncementBoardPage() {
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const panDragRef = useRef<PanDrag | null>(null)
   const blockDragRef = useRef<BlockDrag | null>(null)
+  const linkNodeDragRef = useRef<LinkNodeDrag | null>(null)
+  const linkClickRef = useRef<{ blockId: string; moved: boolean } | null>(null)
   const panRef = useRef<Point>({ x: 0, y: 0 })
   const zoomRef = useRef(DEFAULT_ZOOM)
   const viewportSizeRef = useRef<Size>({ width: 0, height: 0 })
@@ -391,6 +512,7 @@ export default function AnnouncementBoardPage() {
   const [boardExists, setBoardExists] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
+  const [linkPulseId, setLinkPulseId] = useState<string | null>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const selectedIdRef = useRef<string | null>(null)
@@ -718,6 +840,24 @@ export default function AnnouncementBoardPage() {
     messageRef.current?.focus()
   }, [selectedId, isPanelEditing, blocks])
 
+  const startLinkNodeDrag = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    block: BoardTextBlock
+  ) => {
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    linkNodeDragRef.current = {
+      pointerId: event.pointerId,
+      blockId: block.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      originOffsetX: block.linkNodeOffsetX ?? 0,
+      originOffsetY: block.linkNodeOffsetY ?? 0,
+      moved: false,
+    }
+    linkClickRef.current = { blockId: block.id, moved: false }
+  }
+
   const startBlockDrag = (
     event: ReactPointerEvent<HTMLDivElement>,
     block: BoardTextBlock
@@ -754,6 +894,20 @@ export default function AnnouncementBoardPage() {
         }
       }
       blockDragRef.current = null
+    }
+
+    if (linkNodeDragRef.current?.pointerId === pointerId) {
+      const linkEl = document.querySelector(
+        `[data-link-node-id="${linkNodeDragRef.current.blockId}"]`
+      )
+      if (linkEl instanceof HTMLElement) {
+        try {
+          linkEl.releasePointerCapture(pointerId)
+        } catch {
+          /* not captured */
+        }
+      }
+      linkNodeDragRef.current = null
     }
 
     if (panDragRef.current?.pointerId === pointerId) {
@@ -799,6 +953,31 @@ export default function AnnouncementBoardPage() {
         return
       }
 
+      const linkDrag = linkNodeDragRef.current
+      if (linkDrag?.pointerId === event.pointerId) {
+        if (
+          Math.hypot(
+            event.clientX - linkDrag.startX,
+            event.clientY - linkDrag.startY
+          ) > 4
+        ) {
+          linkDrag.moved = true
+          if (linkClickRef.current?.blockId === linkDrag.blockId) {
+            linkClickRef.current.moved = true
+          }
+        }
+
+        const scaleX = BOARD_WIDTH * zoomRef.current
+        const scaleY = BOARD_HEIGHT * zoomRef.current
+        updateBlock(linkDrag.blockId, {
+          linkNodeOffsetX:
+            linkDrag.originOffsetX + (event.clientX - linkDrag.startX) / scaleX,
+          linkNodeOffsetY:
+            linkDrag.originOffsetY + (event.clientY - linkDrag.startY) / scaleY,
+        })
+        return
+      }
+
       const panDrag = panDragRef.current
       if (panDrag?.pointerId !== event.pointerId) return
 
@@ -833,6 +1012,7 @@ export default function AnnouncementBoardPage() {
   const handleViewportPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
     if ((event.target as HTMLElement).closest("[data-block]")) return
+    if ((event.target as HTMLElement).closest("[data-link-node]")) return
     if ((event.target as HTMLElement).closest("[data-board-panel]")) return
 
     event.preventDefault()
@@ -874,6 +1054,12 @@ export default function AnnouncementBoardPage() {
         return block ? [{ connectionId: connection.id, block }] : []
       })
   }, [selectedBlock, connections, blocks])
+
+  const handleLinkOpen = useCallback((blockId: string, url: string) => {
+    setLinkPulseId(blockId)
+    window.setTimeout(() => setLinkPulseId(null), 180)
+    window.open(url, "_blank", "noopener,noreferrer")
+  }, [])
 
   const cancelConnect = useCallback(() => {
     setConnectingFromId(null)
@@ -1073,6 +1259,62 @@ export default function AnnouncementBoardPage() {
               onMeasure={(height) => reportBlockHeight(block.id, height)}
             />
           ))}
+
+          <svg
+            aria-hidden="true"
+            viewBox={`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`}
+            className="pointer-events-none absolute inset-0 z-[15] h-full w-full overflow-visible"
+          >
+            {blocks.map((block) => {
+              const url = normalizeLinkUrl(block.link)
+              if (!url) return null
+              const height = blockHeights[block.id] ?? DEFAULT_BLOCK_HEIGHT
+              const geometry = linkConnectionGeometry(block, height)
+
+              return (
+                <g key={`link-line-${block.id}`}>
+                  <path
+                    d={geometry.path}
+                    fill="none"
+                    stroke="#a855f7"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    opacity="0.85"
+                  />
+                  <circle cx={geometry.start.x} cy={geometry.start.y} r="4" fill="#a855f7" />
+                  <circle cx={geometry.end.x} cy={geometry.end.y} r="3" fill="#c084fc" />
+                </g>
+              )
+            })}
+          </svg>
+
+          {blocks.map((block) => {
+            const url = normalizeLinkUrl(block.link)
+            if (!url) return null
+            const height = blockHeights[block.id] ?? DEFAULT_BLOCK_HEIGHT
+            const center = resolveLinkNodeCenter(block, height)
+
+            return (
+              <LinkNode
+                key={`link-node-${block.id}`}
+                blockId={block.id}
+                center={center}
+                url={url}
+                isPulsing={linkPulseId === block.id}
+                canDrag={canEditBlock(block, user)}
+                onDragStart={(event) => startLinkNodeDrag(event, block)}
+                onOpen={() => {
+                  if (
+                    linkClickRef.current?.blockId === block.id &&
+                    linkClickRef.current.moved
+                  ) {
+                    return
+                  }
+                  handleLinkOpen(block.id, url)
+                }}
+              />
+            )
+          })}
         </div>
 
         {selectedBlock && (
@@ -1160,6 +1402,34 @@ export default function AnnouncementBoardPage() {
                         <span className="text-neutral-400">ยังไม่มีคำอธิบาย</span>
                       )}
                     </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3.5">
+                <Label htmlFor={`link-${selectedBlock.id}`}>เพิ่มลิงก์</Label>
+                {isPanelEditing ? (
+                  <Input
+                    id={`link-${selectedBlock.id}`}
+                    type="url"
+                    value={selectedBlock.link}
+                    onChange={(event) =>
+                      updateBlock(selectedBlock.id, { link: event.target.value })
+                    }
+                    placeholder="https://example.com"
+                  />
+                ) : normalizeLinkUrl(selectedBlock.link) ? (
+                  <a
+                    href={normalizeLinkUrl(selectedBlock.link)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block truncate rounded-xl bg-neutral-50 px-4 py-3 text-sm text-blue-600 underline-offset-2 hover:underline dark:bg-neutral-800 dark:text-blue-400"
+                  >
+                    {selectedBlock.link.trim()}
+                  </a>
+                ) : (
+                  <div className="mt-2 rounded-xl bg-neutral-50 px-4 py-4 dark:bg-neutral-800">
+                    <p className="text-sm text-neutral-400">ยังไม่มีลิงก์</p>
                   </div>
                 )}
               </div>

@@ -216,4 +216,30 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+
+  .link-node-shimmer {
+    background: linear-gradient(
+      120deg,
+      #f472b6,
+      #c084fc,
+      #60a5fa,
+      #34d399,
+      #fbbf24,
+      #fb7185,
+      #f472b6
+    );
+    background-size: 320% 320%;
+    animation: link-shimmer 4s ease infinite;
+    opacity: 0.62;
+  }
+
+  @keyframes link-shimmer {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
 }
