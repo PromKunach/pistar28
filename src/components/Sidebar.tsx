@@ -154,7 +154,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.4.1
+            version : 1.4.2
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
