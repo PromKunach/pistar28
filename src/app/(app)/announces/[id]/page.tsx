@@ -875,6 +875,20 @@ export default function AnnouncementBoardPage() {
       })
   }, [selectedBlock, connections, blocks])
 
+  const cancelConnect = useCallback(() => {
+    setConnectingFromId(null)
+  }, [])
+
+  const saveStateLabel = isSaving
+    ? "กำลังบันทึก..."
+    : saveError
+      ? saveError
+      : isDirty
+        ? "ยังไม่ได้บันทึก"
+        : savedAt
+          ? `บันทึกแล้ว ${new Date(savedAt).toLocaleTimeString("th-TH")}`
+          : "ยังไม่มีการเปลี่ยนแปลง"
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-3 dark:border-neutral-800">
@@ -892,25 +906,22 @@ export default function AnnouncementBoardPage() {
             <h1 className="truncate text-lg font-semibold text-neutral-800 dark:text-neutral-200">
               {title ?? "พื้นที่ทำงาน"}
             </h1>
-            <p className="text-xs text-neutral-500">
-              ลากพื้นที่เพื่อเลื่อนดู · ล้อเมาส์เพื่อซูม · คลิกข้อความเพื่อเปิด/ปิดคำอธิบาย
+            <p
+              className={cn(
+                "text-xs",
+                saveError
+                  ? "text-red-600 dark:text-red-400"
+                  : isDirty
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-neutral-500"
+              )}
+            >
+              {saveStateLabel}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {saveError && (
-            <span className="max-w-xs text-xs text-red-600 dark:text-red-400">
-              {saveError}
-            </span>
-          )}
-          <span className="text-xs text-neutral-500">
-            {isDirty
-              ? "ยังไม่ได้บันทึก"
-              : savedAt
-                ? `บันทึกแล้ว ${new Date(savedAt).toLocaleTimeString("th-TH")}`
-                : "ยังไม่มีการเปลี่ยนแปลง"}
-          </span>
           {canAddBlocks && (
             <Button
               variant="outline"
@@ -953,8 +964,17 @@ export default function AnnouncementBoardPage() {
         )}
       >
         {connectingFromId && (
-          <div className="pointer-events-none absolute top-4 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium text-white shadow-lg">
-            เลือกข้อความอื่นเพื่อเชื่อมต่อ
+          <div className="absolute top-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full bg-neutral-900 py-2 ps-4 pe-2 text-xs font-medium text-white shadow-lg">
+            <span>เลือกข้อความอื่นเพื่อเชื่อมต่อ</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={cancelConnect}
+              className="h-7 rounded-full px-3 text-white hover:bg-white/15 hover:text-white"
+            >
+              ยกเลิก
+            </Button>
           </div>
         )}
 
