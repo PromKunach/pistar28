@@ -225,7 +225,7 @@ export function InspectCard({
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           onKeyDown={handleKeyDown}
-          className="relative h-[28rem] w-[20rem] cursor-grab touch-pan-y select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-4 sm:h-[32rem] sm:w-[22.5rem] lg:h-[34rem] lg:w-[24rem]"
+          className="relative h-[22rem] w-[15.5rem] cursor-grab touch-pan-y select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-4 sm:h-[32rem] sm:w-[22.5rem] lg:h-[34rem] lg:w-[24rem]"
           style={{
             rotateX,
             rotateY,

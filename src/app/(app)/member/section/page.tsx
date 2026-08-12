@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { CircleDollarSign, Palette, Utensils, Megaphone, LaptopMinimal, Crown, BookOpenText, MapPinned, PartyPopper, MicVocal, Users, X, ChevronUp } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
@@ -19,7 +20,13 @@ type Profile = {
   url: string;
 };
 
-type RoleLabel = "หัวหน้าฝ่าย" | "สมาชิก" | "เลขานุการ" | "ประธาน" | "รองประธาน";
+type RoleLabel =
+  | "หัวหน้าฝ่าย"
+  | "หัวหน้าฝ่าย(ตัวจริง)"
+  | "สมาชิก"
+  | "เลขานุการ"
+  | "ประธาน"
+  | "รองประธาน";
 
 const PFP_COUNT = 32;
 
@@ -32,6 +39,26 @@ function getPfpUrl(index: number) {
 function getMoneyUrl(name: "twenty" | "hundred" | "thousand") {
   const { data } = supabase.storage.from("images").getPublicUrl(`images/other/${name}.png`);
   return data.publicUrl;
+}
+
+const IT_AI_BRANDS = [
+  { id: "ai-claude", label: "Claude", company: "Anthropic", url: "/images/ai/claude.svg" },
+  { id: "ai-gemini", label: "Gemini", company: "Google", url: "/images/ai/gemini.svg" },
+  { id: "ai-cursor", label: "Cursor", company: "Anysphere", url: "/images/ai/cursor.svg" },
+] as const;
+
+function brandToProfile(brand: { id: string; label: string; url: string }): Profile {
+  const meta = IT_AI_BRANDS.find((b) => b.id === brand.id);
+  const company = meta?.company ?? brand.label;
+
+  return {
+    id: brand.id,
+    complete_name_th: company,
+    full_name_th: company,
+    nickname_th: brand.label,
+    section: "IT",
+    url: brand.url,
+  };
 }
 
 function profileInSection(profile: Profile, sectionId: string, sectionLabel: string) {
@@ -119,6 +146,7 @@ const ROLE_STYLES: Record<RoleLabel, string> = {
   รองประธาน: "bg-orange-100 text-orange-700",
   เลขานุการ: "bg-violet-100 text-violet-700",
   หัวหน้าฝ่าย: "bg-sky-100 text-sky-700",
+  "หัวหน้าฝ่าย(ตัวจริง)": "bg-indigo-100 text-indigo-700",
   สมาชิก: "bg-slate-100 text-slate-600",
 };
 
@@ -266,11 +294,11 @@ function PersonPopupCard({
         damping: 28,
         mass: 0.8,
       }}
-      className="fixed z-[9999] w-60 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-white px-4 py-3.5 text-center shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)]"
+      className="fixed z-[9999] w-60 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-white px-4 py-3.5 text-center shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)] lg:w-44 lg:px-3 lg:py-2.5 lg:-translate-y-[calc(100%+10px)] xl:w-60 xl:px-4 xl:py-3.5 xl:-translate-y-[calc(100%+14px)]"
       onClick={(e) => e.stopPropagation()}
     >
-      <p className="text-xs font-medium text-slate-400">{role}</p>
-      <p className="mt-2 text-2xl font-bold leading-tight text-slate-900" style={{ opacity: 0.85 }}>
+      <p className="text-xs font-medium text-slate-400 lg:text-[10px] xl:text-xs">{role}</p>
+      <p className="mt-2 text-2xl font-bold leading-tight text-slate-900 lg:mt-1.5 lg:text-lg xl:mt-2 xl:text-2xl" style={{ opacity: 0.85 }}>
         <Highlighter
           key={profile.id}
           color={highlightColor}
@@ -283,7 +311,7 @@ function PersonPopupCard({
         </Highlighter>
    
       </p>
-      <p className="mt-2 text-sm leading-snug text-slate-600">{profile.full_name_th}</p>
+      <p className="mt-2 text-sm leading-snug text-slate-600 lg:mt-1.5 lg:text-xs xl:mt-2 xl:text-sm">{profile.full_name_th}</p>
     </motion.div>
   );
 }
@@ -304,10 +332,23 @@ const SECTIONS: Section[] = [
   { id: "PR", label: "ประชาสัมพันธ์", icon: Megaphone },
   { id: "IT", label: "เทคโนโลยีสารสนเทศ", icon: LaptopMinimal },
   { id: "Treasurer", label: "เหรัญญิก", icon: CircleDollarSign },
-
-  
-
 ];
+
+function resolveSectionId(value: string | null | undefined): string {
+  if (!value?.trim()) return SECTIONS[0].id;
+  const raw = value.trim();
+  const byId = SECTIONS.find((s) => s.id.toLowerCase() === raw.toLowerCase());
+  if (byId) return byId.id;
+  const byLabel = SECTIONS.find(
+    (s) =>
+      s.label === raw ||
+      s.label.includes(raw) ||
+      raw.includes(s.label) ||
+      s.label.toLowerCase() === raw.toLowerCase()
+  );
+  if (byLabel) return byLabel.id;
+  return SECTIONS[0].id;
+}
 
 function DockButton({
   icon: Icon,
@@ -373,7 +414,11 @@ function DockButton({
 }
 
 export default function HighlighterDemo() {
-  const [selectedId, setSelectedId] = useState(SECTIONS[0].id);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [selectedId, setSelectedId] = useState(() =>
+    resolveSectionId(searchParams.get("section"))
+  );
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -389,6 +434,18 @@ export default function HighlighterDemo() {
   const popupWasOpenRef = useRef(false);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const selected = SECTIONS.find((s) => s.id === selectedId) ?? SECTIONS[0];
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("section");
+    if (fromUrl) setSelectedId(resolveSectionId(fromUrl));
+  }, [searchParams]);
+
+  function selectSection(id: string) {
+    setSelectedId(id);
+    router.replace(`/member/section?section=${encodeURIComponent(id)}`, {
+      scroll: false,
+    });
+  }
 
   useEffect(() => {
     setActivePopupId(null);
@@ -509,7 +566,8 @@ export default function HighlighterDemo() {
 
   type OrbitItem =
     | { kind: "profile"; id: string; profile: Profile }
-    | { kind: "money"; id: string; url: string };
+    | { kind: "money"; id: string; url: string }
+    | { kind: "brand"; id: string; url: string; label: string };
 
   const orbitItems = useMemo<OrbitItem[]>(() => {
     if (selected.id === "Treasurer" && orbitMembers.length === 0) {
@@ -523,11 +581,24 @@ export default function HighlighterDemo() {
         url: getMoneyUrl(item.name),
       }));
     }
-    return orbitMembers.map((profile) => ({
+
+    const profileItems: OrbitItem[] = orbitMembers.map((profile) => ({
       kind: "profile" as const,
       id: String(profile.id),
       profile,
     }));
+
+    if (selected.id === "IT") {
+      const brandItems: OrbitItem[] = IT_AI_BRANDS.map((brand) => ({
+        kind: "brand" as const,
+        id: brand.id,
+        url: brand.url,
+        label: brand.label,
+      }));
+      return [...profileItems, ...brandItems];
+    }
+
+    return profileItems;
   }, [selected.id, orbitMembers]);
 
   const maxPerLayer = useMemo(() => {
@@ -544,11 +615,17 @@ export default function HighlighterDemo() {
       const img = new window.Image();
       img.src = profile.url;
     });
+    if (selected.id === "IT") {
+      IT_AI_BRANDS.forEach((brand) => {
+        const img = new window.Image();
+        img.src = brand.url;
+      });
+    }
     if (sectionHead) {
       const img = new window.Image();
       img.src = sectionHead.url;
     }
-  }, [orbitMembers, sectionHead]);
+  }, [orbitMembers, sectionHead, selected.id]);
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden lg:flex-row">
@@ -563,7 +640,7 @@ export default function HighlighterDemo() {
             label={s.label}
             axis="y"
             isSelected={s.id === selectedId}
-            onClick={() => setSelectedId(s.id)}
+            onClick={() => selectSection(s.id)}
           />
         ))}
           </div>
@@ -600,7 +677,9 @@ export default function HighlighterDemo() {
                       getItemKey={(item) => item.id}
                       baseRadius={130}
                       radiusStep={110}
-                      baseIconSize={orbitItems.some((item) => item.kind === "money") ? 96 : 68}
+                      baseIconSize={
+                        orbitItems.some((item) => item.kind === "money") ? 96 : 68
+                      }
                       maxPerLayer={maxPerLayer}
                       renderItem={(item) =>
                         item.kind === "money" ? (
@@ -613,6 +692,36 @@ export default function HighlighterDemo() {
                               className="h-[145%] w-[145%] max-w-none object-contain"
                             />
                           </div>
+                        ) : item.kind === "brand" ? (
+                          <button
+                            type="button"
+                            className="relative h-full w-full cursor-pointer overflow-visible rounded-full"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPersonPopup(
+                                item.id,
+                                brandToProfile(item),
+                                "หัวหน้าฝ่าย(ตัวจริง)",
+                                e.currentTarget
+                              );
+                            }}
+                          >
+                            <div
+                              className={cn(
+                                "flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-2 ring-1 ring-slate-200 transition-shadow",
+                                activePopupId === item.id && "ring-2 ring-slate-900 shadow-lg"
+                              )}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.url}
+                                alt=""
+                                decoding="async"
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                          </button>
                         ) : (
                           <button
                             type="button"
@@ -633,12 +742,11 @@ export default function HighlighterDemo() {
                                 "h-full w-full overflow-hidden rounded-full bg-white ring-1 ring-slate-200 transition-shadow",
                                 activePopupId === item.id && "ring-2 ring-slate-900 shadow-lg"
                               )}
-                              title={item.profile.full_name_th}
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={item.profile.url}
-                                alt={item.profile.full_name_th}
+                                alt=""
                                 decoding="async"
                                 className="h-full w-full object-cover"
                               />
@@ -673,7 +781,7 @@ export default function HighlighterDemo() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={sectionHead.url}
-                              alt={sectionHead.full_name_th}
+                              alt=""
                               decoding="async"
                               className="h-full w-full rounded-full object-cover"
                             />
@@ -753,7 +861,7 @@ export default function HighlighterDemo() {
               label={s.label}
               axis="x"
               isSelected={s.id === selectedId}
-              onClick={() => setSelectedId(s.id)}
+              onClick={() => selectSection(s.id)}
             />
           ))}
         </div>
@@ -798,7 +906,7 @@ export default function HighlighterDemo() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 32, mass: 0.9 }}
-              className="fixed inset-x-0 bottom-0 z-[61] flex max-h-[78dvh] flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.35)]"
+              className="fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[78dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.35)] md:max-h-[52dvh] md:max-w-md"
             >
               <div className="flex shrink-0 items-center justify-between px-4 pt-3">
                 <div className="mx-auto h-1.5 w-10 rounded-full bg-slate-200" />

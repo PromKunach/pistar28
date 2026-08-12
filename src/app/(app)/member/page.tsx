@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
@@ -47,7 +48,7 @@ function MemberListSkeleton() {
 function DetailSkeleton() {
   return (
     <div className="flex min-h-full animate-pulse flex-col items-center justify-center px-6 py-12">
-      <div className="h-[28rem] w-[20rem] rounded-[1.75rem] bg-slate-200 sm:h-[32rem] sm:w-[22.5rem] lg:h-[34rem] lg:w-[24rem]" />
+      <div className="h-[22rem] w-[15.5rem] rounded-[1.75rem] bg-slate-200 sm:h-[32rem] sm:w-[22.5rem] lg:h-[34rem] lg:w-[24rem]" />
     </div>
   );
 }
@@ -125,28 +126,33 @@ function CardFront({ profile }: { profile: Profile }) {
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/5 to-transparent" />
       <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/20" />
 
-      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3 sm:p-4">
         <Image
           src="/logo_img_white.png"
           alt="PISTAR 28"
           width={56}
           height={56}
           draggable={false}
-          className="h-10 w-auto object-contain sm:h-12"
+          className="h-8 w-auto object-contain sm:h-12"
         />
-        <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tracking-normal text-white/90">
+        <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold tracking-normal text-white/90 sm:px-2.5 sm:py-1 sm:text-xs">
           #{profile.id}
         </span>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 p-5">
-        <p className="text-lg font-semibold leading-snug text-white sm:text-xl">
+      <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5">
+        <p className="text-base font-semibold leading-snug text-white sm:text-xl">
           {profile.full_name_th}
         </p>
-        <p className="mt-0.5 text-sm text-white/65">({profile.nickname_th})</p>
-        <span className="mt-3 inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs text-white/85">
+        <p className="mt-0.5 text-xs text-white/65 sm:text-sm">({profile.nickname_th})</p>
+        <Link
+          href={`/member/section?section=${encodeURIComponent(profile.section ?? "")}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2 inline-flex rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-[10px] text-white/85 transition-colors hover:border-white/50 hover:bg-white/20 sm:mt-3 sm:px-3 sm:py-1 sm:text-xs"
+        >
           {profile.section}
-        </span>
+        </Link>
       </div>
     </div>
   );
@@ -166,9 +172,9 @@ function CardBack({ profile }: { profile: Profile }) {
       />
       <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/15" />
 
-      <div className="relative p-5">
-        <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-white/25">
+      <div className="relative p-3.5 sm:p-5">
+        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3 sm:gap-3 sm:pb-4">
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-white/25 sm:h-11 sm:w-11">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={profile.url}
@@ -179,7 +185,7 @@ function CardBack({ profile }: { profile: Profile }) {
             />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">
+            <p className="truncate text-xs font-semibold text-white sm:text-sm">
               {profile.full_name_th}
             </p>
             <p className="truncate text-xs text-white/55">({profile.nickname_th})</p>
@@ -203,7 +209,7 @@ function MemberDetailPanel({
   if (!selectedProfile) return null;
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
+    <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-12">
       <InspectCard
         resetKey={selectedProfile.id}
         front={<CardFront profile={selectedProfile} />}
@@ -550,10 +556,10 @@ export default function MemberPage() {
   if (loading) {
     return (
       <div className="flex h-[calc(100dvh-3.5rem)] flex-col lg:flex-row">
-        <section className="order-1 w-full lg:order-2 lg:w-[60%]">
+        <section className="order-1 w-full lg:order-2 lg:w-[65%] xl:w-[40%]">
           <DetailSkeleton />
         </section>
-        <section className="order-2 flex w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[40%] lg:border-t-0 lg:border-r">
+        <section className="order-2 flex w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[35%] xl:w-[60%] lg:border-t-0 lg:border-r">
           <div className="border-b border-slate-100 p-4">
             <div className="h-11 animate-pulse rounded-xl bg-slate-100" />
           </div>
@@ -572,7 +578,7 @@ export default function MemberPage() {
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col lg:flex-row">
       {/* Left (desktop) / Bottom (mobile): search + member list */}
-      <section className="order-2 flex min-h-0 w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[60%] lg:border-t-0 lg:border-r">
+      <section className="order-2 flex min-h-0 w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[35%] xl:w-[60%] lg:border-t-0 lg:border-r">
         <div className="shrink-0 border-b border-slate-100 p-4">
           <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <Search className="h-4 w-4 shrink-0 text-slate-400" />
@@ -614,7 +620,7 @@ export default function MemberPage() {
       </section>
 
       {/* Right (desktop) / Top (mobile): selected member detail */}
-      <InertialScrollArea className="order-1 smooth-scrollbar min-h-0 w-full lg:order-2 lg:w-[40%]">
+      <InertialScrollArea className="order-1 smooth-scrollbar min-h-0 w-full lg:order-2 lg:w-[65%] xl:w-[40%]">
         {selectedId ? (
           <MemberDetailPanel profiles={profiles} selectedId={selectedId} />
         ) : (
