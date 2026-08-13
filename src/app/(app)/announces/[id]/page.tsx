@@ -195,7 +195,7 @@ function blockLabel(block: BoardBlock) {
   }
   if (isDockBlock(block)) {
     const count = block.dockedBlockIds.length
-    return count > 0 ? `ด็อก (${count})` : "ด็อก"
+    return count > 0 ? ` Dock  (${count})` : " Dock "
   }
   const text = block.text.trim()
   return text.length > 72 ? `${text.slice(0, 72)}…` : text || "ข้อความไม่มีชื่อ"
@@ -346,6 +346,29 @@ function findDockForBlock(
     }
   }
   return null
+}
+
+function collectTopStackBlockIds(
+  lastSelectedBlockId: string | null,
+  blocks: BoardBlock[]
+) {
+  if (!lastSelectedBlockId) return new Set<string>()
+  const elevated = new Set<string>([lastSelectedBlockId])
+  const dock = findDockForBlock(blocks, lastSelectedBlockId)
+  if (dock) elevated.add(dock.id)
+  return elevated
+}
+
+function blockStackLayerClass(
+  blockId: string,
+  topStackIds: Set<string>,
+  options: { isExpanded?: boolean; isLink?: boolean; isDock?: boolean }
+) {
+  if (topStackIds.has(blockId)) return "z-30"
+  if (options.isLink) return "z-20"
+  if (options.isExpanded) return "z-10"
+  if (options.isDock) return "z-0"
+  return "z-[1]"
 }
 
 function isCanvasBlockVisible(
@@ -555,6 +578,40 @@ function computeDockSnapPosition(
   return { x, y, snapToId: null as string | null, snapSide: null as "above" | "below" | null }
 }
 
+function syncSnappedDocksToParent(
+  blocks: BoardBlock[],
+  parentId: string,
+  parentHeightPx: number,
+  heights: Record<string, number>
+) {
+  const parent = blocks.find((block) => block.id === parentId)
+  if (!parent || !isTextBlock(parent)) return null
+
+  const parentHeightFraction = parentHeightPx / BOARD_HEIGHT
+  let changed = false
+
+  const next = blocks.map((block) => {
+    if (!isDockBlock(block) || block.snapToId !== parentId || !block.snapSide) {
+      return block
+    }
+
+    const dockHeightFraction =
+      (heights[block.id] ?? DEFAULT_DOCK_BLOCK_HEIGHT) / BOARD_HEIGHT
+    const nextX = parent.x
+    const nextY =
+      block.snapSide === "below"
+        ? parent.y + parentHeightFraction + DOCK_SNAP_GAP_FRACTION
+        : parent.y - dockHeightFraction - DOCK_SNAP_GAP_FRACTION
+    const clampedY = clamp(nextY, 0, 0.94)
+
+    if (block.x === nextX && block.y === clampedY) return block
+    changed = true
+    return { ...block, x: nextX, y: clampedY }
+  })
+
+  return changed ? next : null
+}
+
 function findDockDropTarget(
   draggedBlock: BoardBlock,
   x: number,
@@ -741,6 +798,13 @@ type PanDrag = {
   origin: Point
 }
 
+type PinchZoom = {
+  startDistance: number
+  startZoom: number
+  startPan: Point
+  startMid: Point
+}
+
 type BlockDrag = {
   pointerId: number
   blockId: string
@@ -755,6 +819,7 @@ type BlockDrag = {
 function LinkNodeBlock({
   block,
   isRevealed,
+  topStackIds,
   onPointerDown,
   onPointerUp,
   onSelect,
@@ -762,6 +827,7 @@ function LinkNodeBlock({
 }: {
   block: BoardLinkBlock
   isRevealed: boolean
+  topStackIds: Set<string>
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
   onSelect: () => void
@@ -807,7 +873,10 @@ function LinkNodeBlock({
         top: `${block.y * 100}%`,
         width: `${DEFAULT_LINK_WIDTH * 100}%`,
       }}
-      className="absolute z-20 flex cursor-pointer flex-col items-stretch overflow-visible select-none outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+      className={cn(
+        "absolute flex cursor-pointer flex-col items-stretch overflow-visible select-none outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2",
+        blockStackLayerClass(block.id, topStackIds, { isLink: true })
+      )}
     >
       <div
         ref={anchorRef}
@@ -871,6 +940,7 @@ function DockBlock({
   isExpanded,
   isSnapTarget,
   canEdit,
+  topStackIds,
   onPointerDown,
   onPointerUp,
   onSelect,
@@ -887,6 +957,7 @@ function DockBlock({
   isExpanded: boolean
   isSnapTarget: boolean
   canEdit: boolean
+  topStackIds: Set<string>
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
   onSelect: () => void
@@ -925,7 +996,8 @@ function DockBlock({
         width: `${block.width * 100}%`,
       }}
       className={cn(
-        "absolute z-0 cursor-move select-none transition-[box-shadow,border-color,transform] duration-300 ease-out",
+        "absolute cursor-move select-none transition-[box-shadow,border-color,transform] duration-300 ease-out",
+        blockStackLayerClass(block.id, topStackIds, { isDock: true }),
         isExpanded && "scale-[1.02]",
         isSnapTarget && "ring-2 ring-blue-200/80"
       )}
@@ -959,7 +1031,7 @@ function DockBlock({
           {isExpanded && canEdit && (
             <button
               type="button"
-              aria-label="เปิดรายละเอียดด็อก"
+              aria-label="เปิดรายละเอียด Dock "
               data-dock-control
               onPointerDown={(event) => event.stopPropagation()}
               onClick={(event) => {
@@ -979,7 +1051,7 @@ function DockBlock({
 
           <div className="flex items-center justify-between gap-2 pe-8">
             <p className="text-xs font-semibold tracking-wide text-neutral-500">
-              ด็อก
+               Dock 
             </p>
             {isExpanded && dockedBlocks.length > 0 && (
               <button
@@ -1010,7 +1082,7 @@ function DockBlock({
             <p className="w-full text-center text-sm font-medium text-neutral-700 dark:text-neutral-200">
               {dockedBlocks.length > 0
                 ? `${dockedBlocks.length}  Node `
-                : "ด็อก"}
+                : " Dock "}
             </p>
           </div>
 
@@ -1069,7 +1141,7 @@ function DockBlock({
                           <button
                             type="button"
                             data-dock-control
-                            aria-label={`นำ ${blockLabel(docked)} ออกจากด็อกถาวร`}
+                            aria-label={`นำ ${blockLabel(docked)} ออกจาก Dock ถาวร`}
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={(event) => {
                               event.stopPropagation()
@@ -1097,6 +1169,7 @@ function TextBlock({
   block,
   isExpanded,
   canEdit,
+  topStackIds,
   onPointerDown,
   onPointerUp,
   onSelect,
@@ -1106,6 +1179,7 @@ function TextBlock({
   block: BoardTextBlock
   isExpanded: boolean
   canEdit: boolean
+  topStackIds: Set<string>
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
   onSelect: () => void
@@ -1143,7 +1217,9 @@ function TextBlock({
       }}
       className={cn(
         "absolute min-h-32 cursor-move rounded-lg border bg-white p-3 shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-[box-shadow,border-color,transform] duration-300 ease-out dark:bg-neutral-900 dark:shadow-[0_4px_20px_rgba(0,0,0,0.45)]",
-        isExpanded && "z-10 scale-[1.02] border-neutral-900 shadow-[0_4px_10px_rgba(0,0,0,0.1),0_16px_40px_rgba(0,0,0,0.18)] dark:border-neutral-100 dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
+        blockStackLayerClass(block.id, topStackIds, { isExpanded }),
+        isExpanded &&
+          "scale-[1.02] border-neutral-900 shadow-[0_4px_10px_rgba(0,0,0,0.1),0_16px_40px_rgba(0,0,0,0.18)] dark:border-neutral-100 dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
         !isExpanded &&
           "border-transparent hover:border-neutral-300 hover:shadow-[0_4px_10px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.55)]"
       )}
@@ -1296,6 +1372,7 @@ function CounterBlock({
   isExpanded,
   canEdit,
   userStudentId,
+  topStackIds,
   onPointerDown,
   onPointerUp,
   onSelect,
@@ -1308,6 +1385,7 @@ function CounterBlock({
   isExpanded: boolean
   canEdit: boolean
   userStudentId?: string
+  topStackIds: Set<string>
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
   onSelect: () => void
@@ -1362,7 +1440,8 @@ function CounterBlock({
       }}
       className={cn(
         "absolute cursor-move select-none transition-transform duration-300 ease-out",
-        isExpanded && "z-10 scale-[1.02]"
+        blockStackLayerClass(block.id, topStackIds, { isExpanded }),
+        isExpanded && "scale-[1.02]"
       )}
     >
       <div
@@ -1616,6 +1695,7 @@ function CommentBlock({
   canEdit,
   canComment,
   canViewIdentity,
+  topStackIds,
   onPointerDown,
   onPointerUp,
   onSelect,
@@ -1628,6 +1708,7 @@ function CommentBlock({
   canEdit: boolean
   canComment: boolean
   canViewIdentity: boolean
+  topStackIds: Set<string>
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
   onSelect: () => void
@@ -1746,7 +1827,8 @@ function CommentBlock({
       }}
       className={cn(
         "absolute cursor-move select-none transition-transform duration-300 ease-out",
-        isExpanded && "z-10 scale-[1.02]"
+        blockStackLayerClass(block.id, topStackIds, { isExpanded }),
+        isExpanded && "scale-[1.02]"
       )}
     >
       <div
@@ -1907,6 +1989,7 @@ export default function AnnouncementBoardPage() {
   const viewportRef = useRef<HTMLDivElement>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
   const panDragRef = useRef<PanDrag | null>(null)
+  const pinchZoomRef = useRef<PinchZoom | null>(null)
   const blockDragRef = useRef<BlockDrag | null>(null)
   const panRef = useRef<Point>({ x: 0, y: 0 })
   const zoomRef = useRef(DEFAULT_ZOOM)
@@ -1923,6 +2006,7 @@ export default function AnnouncementBoardPage() {
   const [blockHeights, setBlockHeights] = useState<Record<string, number>>({})
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [lastSelectedBlockId, setLastSelectedBlockId] = useState<string | null>(null)
   const [isPanelEditing, setIsPanelEditing] = useState(false)
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null)
   const [title, setTitle] = useState<string | null>(null)
@@ -1937,6 +2021,11 @@ export default function AnnouncementBoardPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const [componentMenuOpen, setComponentMenuOpen] = useState(false)
+  const [componentMenuPosition, setComponentMenuPosition] = useState<{
+    top: number
+    left: number
+    minWidth: number
+  } | null>(null)
   const [dockDropPending, setDockDropPending] = useState<{
     dockId: string
     blockId: string
@@ -1946,6 +2035,7 @@ export default function AnnouncementBoardPage() {
   const [dockedOutIds, setDockedOutIds] = useState<Set<string>>(() => new Set())
   const [dockOutHidden, setDockOutHidden] = useState<Set<string>>(() => new Set())
   const componentMenuRef = useRef<HTMLDivElement>(null)
+  const componentMenuPanelRef = useRef<HTMLDivElement>(null)
   const selectedIdRef = useRef<string | null>(null)
   const hasCenteredRef = useRef(false)
 
@@ -1964,6 +2054,7 @@ export default function AnnouncementBoardPage() {
   dockOutHiddenRef.current = dockOutHidden
 
   const toggleDockedOut = useCallback((dockId: string, blockId: string) => {
+    setLastSelectedBlockId(blockId)
     const currentBlocks = blocksRef.current
     const currentConnections = connectionsRef.current
     const dock = currentBlocks.find(
@@ -1991,16 +2082,6 @@ export default function AnnouncementBoardPage() {
       return
     }
 
-    const outIndex = dock.dockedBlockIds.filter((id) =>
-      dockedOutIdsRef.current.has(id)
-    ).length
-    const position = computeDockOutPosition(dock, block, outIndex)
-
-    setBlocks((current) =>
-      current.map((item) =>
-        item.id === blockId ? { ...item, x: position.x, y: position.y } : item
-      )
-    )
     setDockedOutIds((current) => new Set([...current, blockId]))
     setExpandedIds((current) => new Set([...current, blockId]))
     if (!dockConnectionExists(currentConnections, dockId, blockId)) {
@@ -2047,6 +2128,11 @@ export default function AnnouncementBoardPage() {
     }
     return [...docks, ...others]
   }, [blocks])
+
+  const topStackBlockIds = useMemo(
+    () => collectTopStackBlockIds(lastSelectedBlockId, blocks),
+    [lastSelectedBlockId, blocks]
+  )
 
   useEffect(() => {
     const element = viewportRef.current
@@ -2106,6 +2192,87 @@ export default function AnnouncementBoardPage() {
   }, [applyZoom])
 
   useEffect(() => {
+    const element = viewportRef.current
+    if (!element) return
+
+    const touchPoint = (touch: Touch) => {
+      const rect = element.getBoundingClientRect()
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top }
+    }
+
+    const beginPinch = (event: TouchEvent) => {
+      const a = touchPoint(event.touches[0])
+      const b = touchPoint(event.touches[1])
+      pinchZoomRef.current = {
+        startDistance: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+        startZoom: zoomRef.current,
+        startPan: { ...panRef.current },
+        startMid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      }
+      panDragRef.current = null
+      blockDragRef.current = null
+      setIsPanning(false)
+      setDockHoverId(null)
+    }
+
+    const onTouchStart = (event: TouchEvent) => {
+      if ((event.target as HTMLElement | null)?.closest("[data-board-panel]")) return
+      if (event.touches.length === 2) {
+        event.preventDefault()
+        beginPinch(event)
+      }
+    }
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length < 2) return
+      if ((event.target as HTMLElement | null)?.closest("[data-board-panel]")) return
+      event.preventDefault()
+      if (!pinchZoomRef.current) beginPinch(event)
+
+      const pinch = pinchZoomRef.current
+      if (!pinch) return
+
+      const a = touchPoint(event.touches[0])
+      const b = touchPoint(event.touches[1])
+      const distance = Math.max(1, Math.hypot(b.x - a.x, b.y - a.y))
+      const nextZoom = clampZoom(pinch.startZoom * (distance / pinch.startDistance))
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+      const zoomedPan = zoomAtPoint(
+        pinch.startPan,
+        pinch.startZoom,
+        nextZoom,
+        pinch.startMid
+      )
+      setZoom(nextZoom)
+      setPan(
+        clampPan(
+          {
+            x: zoomedPan.x + (mid.x - pinch.startMid.x),
+            y: zoomedPan.y + (mid.y - pinch.startMid.y),
+          },
+          viewportSizeRef.current,
+          nextZoom
+        )
+      )
+    }
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinchZoomRef.current = null
+    }
+
+    element.addEventListener("touchstart", onTouchStart, { passive: false })
+    element.addEventListener("touchmove", onTouchMove, { passive: false })
+    element.addEventListener("touchend", onTouchEnd)
+    element.addEventListener("touchcancel", onTouchEnd)
+    return () => {
+      element.removeEventListener("touchstart", onTouchStart)
+      element.removeEventListener("touchmove", onTouchMove)
+      element.removeEventListener("touchend", onTouchEnd)
+      element.removeEventListener("touchcancel", onTouchEnd)
+    }
+  }, [])
+
+  useEffect(() => {
     let cancelled = false
 
     async function load() {
@@ -2153,13 +2320,40 @@ export default function AnnouncementBoardPage() {
     }
   }, [announcementId])
 
+  useLayoutEffect(() => {
+    if (!componentMenuOpen) return
+
+    const updateMenuPosition = () => {
+      const rect = componentMenuRef.current?.getBoundingClientRect()
+      if (!rect) return
+      setComponentMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        minWidth: rect.width,
+      })
+    }
+
+    updateMenuPosition()
+    window.addEventListener("resize", updateMenuPosition)
+    window.addEventListener("scroll", updateMenuPosition, true)
+    return () => {
+      window.removeEventListener("resize", updateMenuPosition)
+      window.removeEventListener("scroll", updateMenuPosition, true)
+    }
+  }, [componentMenuOpen])
+
   useEffect(() => {
     if (!componentMenuOpen) return
 
     const onPointerDown = (event: PointerEvent) => {
-      if (!componentMenuRef.current?.contains(event.target as Node)) {
-        setComponentMenuOpen(false)
+      const target = event.target as Node
+      if (
+        componentMenuRef.current?.contains(target) ||
+        componentMenuPanelRef.current?.contains(target)
+      ) {
+        return
       }
+      setComponentMenuOpen(false)
     }
 
     window.addEventListener("pointerdown", onPointerDown)
@@ -2180,6 +2374,15 @@ export default function AnnouncementBoardPage() {
       if (current[id] === height) return current
       return { ...current, [id]: height }
     })
+
+    const synced = syncSnappedDocksToParent(blocksRef.current, id, height, {
+      ...blockHeightsRef.current,
+      [id]: height,
+    })
+    if (synced) {
+      setBlocks(synced)
+      setIsDirty(true)
+    }
   }, [])
 
   const pruneEmptyBlock = useCallback((id: string | null) => {
@@ -2228,6 +2431,7 @@ export default function AnnouncementBoardPage() {
   const openPanel = useCallback((id: string, edit: boolean) => {
     const previous = selectedIdRef.current
     if (previous && previous !== id) pruneEmptyBlock(previous)
+    setLastSelectedBlockId(id)
     expandBlock(id)
     setSelectedId(id)
     setIsPanelEditing(edit)
@@ -2559,6 +2763,7 @@ export default function AnnouncementBoardPage() {
 
   const selectBlock = useCallback(
     (id: string) => {
+      setLastSelectedBlockId(id)
       if (!connectingFromId) {
         const nowExpanded = toggleBlockExpanded(id)
         if (!nowExpanded && selectedIdRef.current === id) {
@@ -2690,6 +2895,7 @@ export default function AnnouncementBoardPage() {
       ) {
         return
       }
+      setLastSelectedBlockId(block.id)
       if (connectingFromId) {
         selectBlock(block.id)
         return
@@ -2704,6 +2910,7 @@ export default function AnnouncementBoardPage() {
     event: ReactPointerEvent<HTMLDivElement>,
     block: BoardBlock
   ) => {
+    if (pinchZoomRef.current) return
     if ((event.target as HTMLElement).closest("[data-counter-control]")) return
     if ((event.target as HTMLElement).closest("[data-comment-control]")) return
     if ((event.target as HTMLElement).closest("[data-dock-control]")) return
@@ -2793,6 +3000,8 @@ export default function AnnouncementBoardPage() {
 
   const handlePointerMove = useCallback(
     (event: PointerEvent) => {
+      if (pinchZoomRef.current) return
+
       const blockDrag = blockDragRef.current
       if (blockDrag?.pointerId === event.pointerId) {
         if (
@@ -2922,6 +3131,7 @@ export default function AnnouncementBoardPage() {
   }, [endPointer, handlePointerMove])
 
   const handleViewportPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (pinchZoomRef.current) return
     if (event.button !== 0) return
     if ((event.target as HTMLElement).closest("[data-block]")) return
     if ((event.target as HTMLElement).closest("[data-counter-control]")) return
@@ -2993,8 +3203,8 @@ export default function AnnouncementBoardPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-3 dark:border-neutral-800">
-        <div className="flex min-w-0 items-center gap-3">
+      <header className="flex flex-col gap-2 border-b border-neutral-200 px-3 py-3 sm:flex-row sm:items-center sm:gap-3 sm:px-5 dark:border-neutral-800">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -3023,7 +3233,8 @@ export default function AnnouncementBoardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="-mx-3 min-w-0 overflow-x-auto overscroll-x-contain px-3 [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-x sm:mx-0 sm:ms-auto sm:flex-1 sm:px-0 [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max items-center gap-2 sm:ms-auto sm:justify-end sm:pe-1">
           {canAddBlocks && (
             <Button
               variant="outline"
@@ -3041,7 +3252,7 @@ export default function AnnouncementBoardPage() {
             </Button>
           )}
           {canAddBlocks && (
-            <div ref={componentMenuRef} className="relative">
+            <div ref={componentMenuRef} className="relative shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -3053,57 +3264,67 @@ export default function AnnouncementBoardPage() {
                 เพิ่ม Node 
                 <ChevronDown className="ms-2 h-4 w-4" />
               </Button>
-              {componentMenuOpen && (
-                <div
-                  role="menu"
-                  className="absolute top-full right-0 z-50 mt-1 min-w-[12rem] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={addCounterBlock}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+              {componentMenuOpen &&
+                componentMenuPosition &&
+                typeof document !== "undefined" &&
+                createPortal(
+                  <div
+                    ref={componentMenuPanelRef}
+                    role="menu"
+                    style={{
+                      top: componentMenuPosition.top,
+                      left: componentMenuPosition.left,
+                      minWidth: componentMenuPosition.minWidth,
+                    }}
+                    className="fixed z-[300] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-white text-xs font-bold text-blue-600">
-                      #
-                    </span>
-                     Node ตัวนับ
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={addCommentBlock}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
-                      <MessageSquare className="h-3.5 w-3.5" />
-                    </span>
-                     Node ความคิดเห็น
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={addLinkBlock}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
-                      <Paperclip className="h-3.5 w-3.5" />
-                    </span>
-                     Node ลิงก์
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={addDockBlock}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
-                      <PanelBottom className="h-3.5 w-3.5" />
-                    </span>
-                     Node ด็อก
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={addCounterBlock}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-white text-xs font-bold text-blue-600">
+                        #
+                      </span>
+                      Node ตัวนับ
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={addCommentBlock}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      </span>
+                      Node ความคิดเห็น
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={addLinkBlock}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
+                        <Paperclip className="h-3.5 w-3.5" />
+                      </span>
+                      Node ลิงก์
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={addDockBlock}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
+                        <PanelBottom className="h-3.5 w-3.5" />
+                      </span>
+                      Node  Dock
+                    </button>
+                  </div>,
+                  document.body
+                )}
             </div>
           )}
           {canAddBlocks && (
@@ -3118,6 +3339,7 @@ export default function AnnouncementBoardPage() {
             )}
           </Button>
           )}
+          </div>
         </div>
       </header>
 
@@ -3187,6 +3409,20 @@ export default function AnnouncementBoardPage() {
           }}
           className="absolute top-0 left-0 origin-top-left cursor-default rounded-sm bg-white shadow-inner dark:bg-neutral-950"
         >
+          <svg
+            aria-hidden="true"
+            viewBox={`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`}
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+          >
+            {renderBoardConnections(
+              connections,
+              blocks,
+              blockHeights,
+              dockedOutIds,
+              dockOutHidden
+            )}
+          </svg>
+
           {boardRenderBlocks.map((block) => {
             if (
               dockedBlockIds.has(block.id) &&
@@ -3225,6 +3461,7 @@ export default function AnnouncementBoardPage() {
                   isExpanded={expandedIds.has(block.id)}
                   canEdit={canEditBlock(block, user)}
                   userStudentId={user?.studentId}
+                  topStackIds={topStackBlockIds}
                   {...sharedHandlers}
                   onIncrement={() => adjustCounter(block.id, 1)}
                   onDecrement={() => adjustCounter(block.id, -1)}
@@ -3241,6 +3478,7 @@ export default function AnnouncementBoardPage() {
                   canEdit={canEditBlock(block, user)}
                   canComment={authorReady && Boolean(user)}
                   canViewIdentity={authorReady && Boolean(user)}
+                  topStackIds={topStackBlockIds}
                   {...sharedHandlers}
                   onAddComment={(text, imageDataUrl) =>
                     appendComment(block.id, text, imageDataUrl)
@@ -3255,6 +3493,7 @@ export default function AnnouncementBoardPage() {
                   key={block.id}
                   block={block}
                   isRevealed={!collapsedLinkIds.has(block.id)}
+                  topStackIds={topStackBlockIds}
                   onPointerDown={(event) => startBlockDrag(event, block)}
                   onPointerUp={handlePointerUp}
                   onSelect={() => activateLinkBlock(block)}
@@ -3278,6 +3517,7 @@ export default function AnnouncementBoardPage() {
                   isExpanded={expandedIds.has(block.id)}
                   isSnapTarget={dockHoverId === block.id}
                   canEdit={canEditBlock(block, user)}
+                  topStackIds={topStackBlockIds}
                   onPointerDown={(event) => startBlockDrag(event, block)}
                   onPointerUp={handlePointerUp}
                   onSelect={sharedHandlers.onSelect}
@@ -3296,24 +3536,11 @@ export default function AnnouncementBoardPage() {
                 block={block}
                 isExpanded={expandedIds.has(block.id)}
                 canEdit={canEditBlock(block, user)}
+                topStackIds={topStackBlockIds}
                 {...sharedHandlers}
               />
             )
           })}
-
-          <svg
-            aria-hidden="true"
-            viewBox={`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`}
-            className="pointer-events-none absolute inset-0 z-[15] h-full w-full overflow-visible"
-          >
-            {renderBoardConnections(
-              connections,
-              blocks,
-              blockHeights,
-              dockedOutIds,
-              dockOutHidden
-            )}
-          </svg>
         </div>
 
         {selectedBlock && (
@@ -3543,7 +3770,7 @@ export default function AnnouncementBoardPage() {
               ) : isDockBlock(selectedBlock) ? (
                 <>
                   <div className="space-y-3.5">
-                    <Label> Node ในด็อก</Label>
+                    <Label> Node ใน Dock </Label>
                     {selectedBlock.dockedBlockIds.length > 0 ? (
                       <ul className="mt-2 space-y-2">
                         {selectedBlock.dockedBlockIds.map((dockedId) => {
@@ -3573,7 +3800,7 @@ export default function AnnouncementBoardPage() {
                               {canEditSelected && (
                                 <button
                                   type="button"
-                                  aria-label={`นำ ${blockLabel(docked)} ออกจากด็อก`}
+                                  aria-label={`นำ ${blockLabel(docked)} ออกจาก Dock `}
                                   onClick={() =>
                                     undockBlock(selectedBlock.id, dockedId)
                                   }
@@ -3589,7 +3816,7 @@ export default function AnnouncementBoardPage() {
                     ) : (
                       <div className="mt-2 rounded-xl bg-neutral-50 px-4 py-4 dark:bg-neutral-800">
                         <p className="text-sm text-neutral-500">
-                          ลาก Node มาวางในด็อกเพื่อเก็บไว้ที่นี่
+                          ลาก Node มาวางใน Dock เพื่อเก็บไว้ที่นี่
                         </p>
                       </div>
                     )}
@@ -3775,7 +4002,7 @@ export default function AnnouncementBoardPage() {
                       : isLinkBlock(selectedBlock)
                         ? "ลบลิงก์"
                         : isDockBlock(selectedBlock)
-                          ? "ลบด็อก"
+                          ? "ลบ Dock "
                           : "ลบข้อความ"}
                 </Button>
               ) : (
@@ -3788,7 +4015,7 @@ export default function AnnouncementBoardPage() {
                         : isLinkBlock(selectedBlock)
                           ? "ลบลิงก์นี้หรือไม่?"
                           : isDockBlock(selectedBlock)
-                            ? "ลบด็อกนี้หรือไม่?"
+                            ? "ลบ Dock นี้หรือไม่?"
                             : "ลบข้อความนี้หรือไม่?"}
                   </p>
                   <p className="text-xs leading-relaxed text-red-700/80 dark:text-red-300/80">
@@ -3799,7 +4026,7 @@ export default function AnnouncementBoardPage() {
                         : isLinkBlock(selectedBlock)
                           ? "ลิงก์และการเชื่อมต่อจะถูกลบออก"
                           : isDockBlock(selectedBlock)
-                            ? "ด็อกจะถูกลบออก  Node ที่อยู่ภายในจะกลับไปแสดงบนบอร์ด"
+                            ? " Dock จะถูกลบออก  Node ที่อยู่ภายในจะกลับไปแสดงบนบอร์ด"
                             : "ข้อความ คำอธิบาย และการเชื่อมต่อทั้งหมดจะถูกลบออก"}
                   </p>
                   <div className="flex gap-2">
@@ -3869,7 +4096,7 @@ export default function AnnouncementBoardPage() {
                Node นี้มีการเชื่อมต่อ {dockDropPending.connectionIds.length} รายการ
             </p>
             <p className="mt-2 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-              ต้องการตัดการเชื่อมทั้งหมดก่อนนำเข้าด็อก หรือเก็บการเชื่อมไว้?
+              ต้องการตัดการเชื่อมทั้งหมดก่อนนำเข้า Dock  หรือเก็บการเชื่อมไว้?
             </p>
             <div className="mt-4 flex flex-col gap-2">
               <Button
