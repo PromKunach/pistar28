@@ -242,4 +242,89 @@
       background-position: 100% 50%;
     }
   }
+
+  .counter-name-label {
+    animation: counter-name-float 0.45s ease both;
+  }
+
+  .counter-pill {
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.1);
+    transition:
+      box-shadow 0.35s ease,
+      border-color 0.3s ease;
+  }
+
+  .counter-pill-expanded .counter-pill {
+    box-shadow:
+      0 4px 18px rgba(37, 99, 235, 0.18),
+      0 0 0 3px rgba(59, 130, 246, 0.08);
+    border-color: rgb(37 99 235);
+  }
+
+  .counter-pill-expanded {
+    transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  .counter-pill-btn {
+    transition:
+      background-color 0.2s ease,
+      transform 0.18s cubic-bezier(0.34, 1.45, 0.64, 1);
+  }
+
+  .counter-value-pop {
+    animation: counter-value-pop 0.36s cubic-bezier(0.34, 1.55, 0.64, 1);
+  }
+
+  .counter-list-panel {
+    animation: counter-list-panel-in 0.32s ease both;
+  }
+
+  .counter-list-item {
+    animation: counter-list-item-in 0.34s ease both;
+  }
+
+  @keyframes counter-name-float {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes counter-value-pop {
+    0% {
+      transform: scale(1);
+    }
+    45% {
+      transform: scale(1.18);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes counter-list-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes counter-list-item-in {
+    from {
+      opacity: 0;
+      transform: translateX(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 }

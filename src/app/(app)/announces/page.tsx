@@ -129,6 +129,12 @@ const COLOR_TARGET_LABELS: Record<ColorTarget, string> = {
   card: "การ์ด",
 }
 
+function formatAnnounceCreatedAt(value: string) {
+  return new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium",
+  }).format(new Date(value))
+}
+
 function normalizeHex(value: string): string | null {
   const trimmed = value.trim()
   const withHash = trimmed.startsWith("#") ? trimmed : `#${trimmed}`
@@ -359,7 +365,7 @@ function recordsToFeatures(
       name: record.name,
       description: record.description,
       href: `/announces/${record.id}`,
-      cta: "เปิดบอร์ด",
+      cta: formatAnnounceCreatedAt(record.created_at),
       background: tileBackground(imageUrl, record.image_focus, record.card_color),
       placement,
       author,
@@ -390,7 +396,7 @@ function recordToFeature(
     name: record.name,
     description: record.description,
     href: `/announces/${record.id}`,
-    cta: "เปิดบอร์ด",
+    cta: formatAnnounceCreatedAt(record.created_at),
     background: tileBackground(imageUrl, record.image_focus, record.card_color),
     placement,
     author,

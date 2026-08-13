@@ -76,7 +76,7 @@ type NavItem = {
 const NAV_TOP: NavItem[] = [
   { label: "หน้าหลัก", icon: Home, href: "/" },
   { label: "สมาชิก", icon: Users,expandable:true, href: "/member", children:[{label: "สมาชิกทั้งหมด", href: "/member"},{ label: "ฝ่ายการทำงาน", href: "/member/section" },]},
-  { label: "โน้ตประกาศ", icon: Pin, href: "/announces" },
+  { label: "บอร์ดประกาศ", icon: Pin, href: "/announces" },
   { label: "กำหนดการณ์", icon: CalendarDays, href: "/appointment" },
   { label: "ฟีดข่าวสาร", icon: Loader, href: "/news" },
 ];
@@ -192,7 +192,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.4.4
+            version : 1.4.6
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 

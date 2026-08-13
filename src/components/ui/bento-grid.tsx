@@ -1,6 +1,5 @@
 import { type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from "react"
 import Link from "next/link"
-import { ArrowRightIcon } from "@radix-ui/react-icons"
 
 import { cn } from "@/lib/utils"
 
@@ -77,7 +76,7 @@ const BentoCard = ({
       } as CSSProperties
     }
     className={cn(
-      "group relative flex flex-col justify-between overflow-hidden rounded-xl",
+      "relative flex flex-col justify-between overflow-hidden rounded-xl",
       clickable && "cursor-pointer",
       placement
         ? "col-span-full lg:[grid-column:var(--bento-col)] lg:[grid-row:var(--bento-row)]"
@@ -96,10 +95,10 @@ const BentoCard = ({
   >
     <div className="pointer-events-none absolute inset-0 z-0">{background}</div>
     {author && (
-      <div className="pointer-events-none absolute top-3 right-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full bg-white/85 px-2.5 py-1.5 shadow-sm backdrop-blur-sm ring-1 ring-neutral-200/80 dark:bg-neutral-950/75 dark:ring-neutral-700">
+      <div className="pointer-events-none absolute top-3 right-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full bg-black/55 px-2.5 py-1.5 shadow-sm backdrop-blur-md ring-1 ring-black/20">
         <div className="min-w-0 text-right">
           <p className="text-[10px] leading-none text-neutral-400">Posted by</p>
-          <p className="truncate text-xs font-medium text-neutral-700 dark:text-neutral-200">
+          <p className="truncate text-xs font-medium text-neutral-100">
             {author.displayName}
           </p>
         </div>
@@ -107,17 +106,17 @@ const BentoCard = ({
           <img
             src={author.avatarUrl}
             alt=""
-            className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
+            className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/20"
           />
         ) : (
-          <div className="h-7 w-7 shrink-0 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+          <div className="h-7 w-7 shrink-0 rounded-full bg-neutral-700 ring-1 ring-white/20" />
         )}
       </div>
     )}
     <div className="relative z-10 mt-auto p-4">
-      <div className="pointer-events-none z-10 flex transform-gpu flex-col gap-1 transition-all duration-300 lg:group-hover:-translate-y-10">
+      <div className="pointer-events-none z-10 flex flex-col gap-1">
         <Icon
-          className="h-12 w-12 origin-left transform-gpu transition-all duration-300 ease-in-out group-hover:scale-75"
+          className="h-12 w-12"
           style={{ color: textColor ?? "var(--foreground)" }}
         />
         <h3
@@ -138,38 +137,28 @@ const BentoCard = ({
         </p>
       </div>
 
-      <div
-        className={cn(
-          "pointer-events-none flex w-full translate-y-0 transform-gpu flex-row items-center transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:hidden"
-        )}
-      >
-        <span className="inline-flex items-center text-sm font-medium text-primary">
+      {cta && (
+        <p
+          className="mt-4 text-sm text-neutral-500"
+          style={
+            textColor
+              ? { color: `color-mix(in oklch, ${textColor} 45%, transparent)` }
+              : undefined
+          }
+        >
           {cta}
-          <ArrowRightIcon className="ms-2 h-4 w-4 rtl:rotate-180" />
-        </span>
-      </div>
-    </div>
-
-    <div
-      className={cn(
-        "pointer-events-none absolute bottom-0 z-20 hidden w-full translate-y-10 transform-gpu flex-row items-center p-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:flex"
+        </p>
       )}
-    >
-      <span className="inline-flex items-center text-sm font-medium text-primary">
-        {cta}
-        <ArrowRightIcon className="ms-2 h-4 w-4 rtl:rotate-180" />
-      </span>
     </div>
 
     {clickable && (
       <Link
         href={href}
-        aria-label={`${cta}: ${name}`}
+        aria-label={name}
         className="absolute inset-0 z-30 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
       />
     )}
 
-    <div className="pointer-events-none absolute inset-0 transform-gpu transition-all duration-300 group-hover:bg-black/3 group-hover:dark:bg-neutral-800/10" />
   </div>
 )
 
