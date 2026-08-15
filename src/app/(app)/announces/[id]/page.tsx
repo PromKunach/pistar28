@@ -1053,37 +1053,35 @@ function DockBlock({
             <p className="text-xs font-semibold tracking-wide text-neutral-500">
                Dock 
             </p>
-            {isExpanded && dockedBlocks.length > 0 && (
+          </div>
+
+          <div className="flex min-h-12 flex-col items-center justify-center px-1">
+            {dockedBlocks.length > 0 ? (
               <button
                 type="button"
                 data-dock-control
                 aria-label={
-                  outNodesVisible
-                    ? "ซ่อน Node ที่เชื่อมอยู่"
-                    : "แสดง Node ที่เชื่อมอยู่"
+                  outNodesVisible ? "ซ่อน Node ทั้งหมด" : "แสดง Node ทั้งหมด"
                 }
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={(event) => {
                   event.stopPropagation()
                   onToggleOutVisibility()
                 }}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                className="flex h-9 w-full items-center justify-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
               >
                 {outNodesVisible ? (
-                  <Eye className="h-4 w-4" />
-                ) : (
                   <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
                 )}
+                {outNodesVisible ? "Hide all" : "Show all"}
               </button>
+            ) : (
+              <p className="w-full text-center text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                 Dock 
+              </p>
             )}
-          </div>
-
-          <div className="flex min-h-12 flex-col items-center justify-center px-1">
-            <p className="w-full text-center text-sm font-medium text-neutral-700 dark:text-neutral-200">
-              {dockedBlocks.length > 0
-                ? `${dockedBlocks.length}  Node `
-                : " Dock "}
-            </p>
           </div>
 
           <div
@@ -1277,7 +1275,7 @@ function TextBlock({
       >
         <div className="overflow-hidden">
           <div className="border-t border-neutral-200/80 pt-2.5 dark:border-neutral-700/80">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-neutral-500 dark:text-neutral-400">
+            <p className="text-base leading-relaxed whitespace-pre-wrap text-neutral-500 dark:text-neutral-400">
               {block.description.trim() || (
                 <span className="text-neutral-400 dark:text-neutral-500">
                   ยังไม่มีคำอธิบาย
@@ -1539,7 +1537,7 @@ function CommentEntryRow({
   canViewIdentity: boolean
   imageClassName?: string
 }) {
-  const showIdentity = canViewIdentity && Boolean(entry.user?.displayName)
+  const showIdentity = Boolean(entry.user?.displayName)
 
   return (
     <div className="flex gap-2.5 rounded-lg bg-neutral-50 px-2.5 py-2 dark:bg-neutral-800/80">
@@ -2105,12 +2103,57 @@ export default function AnnouncementBoardPage() {
   }, [])
 
   const toggleDockOutVisibility = useCallback((dockId: string) => {
+    const currentBlocks = blocksRef.current
+    const currentConnections = connectionsRef.current
+    const dock = currentBlocks.find(
+      (block): block is BoardDockBlock =>
+        block.id === dockId && isDockBlock(block)
+    )
+    if (!dock || dock.dockedBlockIds.length === 0) return
+
+    const ids = dock.dockedBlockIds
+    const allOut = ids.every((id) => dockedOutIdsRef.current.has(id))
+    const hidden = dockOutHiddenRef.current.has(dockId)
+
+    if (allOut && !hidden) {
+      setDockedOutIds((current) => {
+        const next = new Set(current)
+        for (const id of ids) next.delete(id)
+        return next
+      })
+      setExpandedIds((current) => {
+        const next = new Set(current)
+        for (const id of ids) next.delete(id)
+        return next
+      })
+      setIsDirty(true)
+      return
+    }
+
+    setDockedOutIds((current) => new Set([...current, ...ids]))
+    setExpandedIds((current) => new Set([...current, ...ids]))
+    const missing = ids.filter(
+      (id) => !dockConnectionExists(currentConnections, dockId, id)
+    )
+    if (missing.length > 0) {
+      const createdAt = new Date().toISOString()
+      setConnections((current) => [
+        ...current,
+        ...missing.map((id) => ({
+          id: crypto.randomUUID(),
+          fromId: dockId,
+          toId: id,
+          createdAt,
+        })),
+      ])
+    }
     setDockOutHidden((current) => {
+      if (!current.has(dockId)) return current
       const next = new Set(current)
-      if (next.has(dockId)) next.delete(dockId)
-      else next.add(dockId)
+      next.delete(dockId)
       return next
     })
+    setIsDirty(true)
   }, [])
 
   const blocksById = useMemo(() => {
@@ -3513,7 +3556,11 @@ export default function AnnouncementBoardPage() {
                   block={block}
                   dockedBlocks={dockedBlocks}
                   dockedOutIds={dockedOutIds}
-                  outNodesVisible={!dockOutHidden.has(block.id)}
+                  outNodesVisible={
+                    dockedBlocks.length > 0 &&
+                    dockedBlocks.every((item) => dockedOutIds.has(item.id)) &&
+                    !dockOutHidden.has(block.id)
+                  }
                   isExpanded={expandedIds.has(block.id)}
                   isSnapTarget={dockHoverId === block.id}
                   canEdit={canEditBlock(block, user)}
@@ -3538,6 +3585,23 @@ export default function AnnouncementBoardPage() {
                 canEdit={canEditBlock(block, user)}
                 topStackIds={topStackBlockIds}
                 {...sharedHandlers}
+                onSelect={() => {
+                  if (
+                    blockClickRef.current?.blockId === block.id &&
+                    blockClickRef.current.moved
+                  ) {
+                    return
+                  }
+                  if (!canEditBlock(block, user) && !connectingFromId) {
+                    if (selectedIdRef.current === block.id) {
+                      selectBlock(block.id)
+                    } else {
+                      openPanel(block.id, false)
+                    }
+                    return
+                  }
+                  selectBlock(block.id)
+                }}
               />
             )
           })}
@@ -3703,9 +3767,7 @@ export default function AnnouncementBoardPage() {
                         {selectedBlock.comments.length} ความคิดเห็น
                       </p>
                       <p className="mt-1 text-xs text-neutral-400">
-                        {authorReady && user
-                          ? "ขยาย Node บนบอร์ดเพื่อดูและแสดงความคิดเห็น"
-                          : "ขยาย Node บนบอร์ดเพื่อดูและแสดงความคิดเห็น (นิรนาม)"}
+                        ขยาย Node บนบอร์ดเพื่อดูและแสดงความคิดเห็น
                       </p>
                     </div>
                   </div>

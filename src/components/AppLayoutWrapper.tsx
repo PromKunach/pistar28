@@ -3,6 +3,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
+import { cn } from "@/lib/utils";
 const NO_LAYOUT_ROUTES = ["/login", "/onboarding"];
 export default function AppLayoutWrapper({
   children,
@@ -25,7 +26,14 @@ export default function AppLayoutWrapper({
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenSidebar={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto",
+            pathname === "/appointment" && "no-scrollbar"
+          )}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
