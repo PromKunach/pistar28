@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 import { InertialScrollArea } from "@/components/ui/inertial-scroll";
-import { InspectCard } from "@/components/ui/inspect-card";
+import { AvatarSelectorItem } from "@/components/member/AvatarSelectorItem";
+import { MemberInspectCard } from "@/components/member/MemberInspectCard";
+import type { MemberProfile } from "@/components/member/types";
+import {
+  normalizeCustomization,
+  type ProfileCustomization,
+} from "@/lib/profileCustomization";
 
 import { SquigglyText } from "@/components/ui/squiggly-text";
-type Profile = {
-  id: string;
+
+type Profile = MemberProfile & {
   complete_name_th: string;
-  pbri_id: string;
-  nickname_th: string;
-  section: string;
-  full_name_th: string;
-  url: string;
+  customization: ProfileCustomization;
 };
 
 const PFP_COUNT = 32;
@@ -52,140 +53,6 @@ function DetailSkeleton() {
   );
 }
 
-/**
- * Swaps between two stacked layers so a new photo fades in over the old one
- * without keeping every profile image mounted.
- */
-function CrossfadeImage({ src, alt }: { src: string; alt: string }) {
-  const [layers, setLayers] = useState(() => [{ src, key: 0 }]);
-  const keyRef = useRef(0);
-
-  useEffect(() => {
-    setLayers((prev) => {
-      if (prev[prev.length - 1].src === src) return prev;
-      keyRef.current += 1;
-      return [...prev.slice(-1), { src, key: keyRef.current }];
-    });
-  }, [src]);
-
-  return (
-    <div className="relative h-full w-full">
-      {layers.map((layer, i) => {
-        const isTop = i === layers.length - 1;
-        return (
-          <FadeInImage
-            key={layer.key}
-            src={layer.src}
-            alt={isTop ? alt : ""}
-            instant={layers.length === 1}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function FadeInImage({
-  src,
-  alt,
-  instant,
-}: {
-  src: string;
-  alt: string;
-  instant: boolean;
-}) {
-  const [visible, setVisible] = useState(instant);
-
-  useEffect(() => {
-    if (instant) return;
-    const id = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(id);
-  }, [instant]);
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      decoding="async"
-      draggable={false}
-      className={cn(
-        "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
-        visible ? "opacity-100" : "opacity-0"
-      )}
-    />
-  );
-}
-
-function CardFront({ profile }: { profile: Profile }) {
-  return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] bg-slate-950 p-3.5 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.55)] ring-1 ring-slate-800 sm:p-5">
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl ring-1 ring-white/10">
-        <CrossfadeImage src={profile.url} alt={profile.full_name_th} />
-        <span className="absolute bottom-2 right-2 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-semibold tracking-normal text-white/90 backdrop-blur-sm sm:bottom-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs">
-          #{profile.id}
-        </span>
-      </div>
-
-      <div className="mt-3 shrink-0 sm:mt-4">
-        <p className="text-base font-semibold leading-snug text-white sm:text-xl">
-          {profile.full_name_th}
-        </p>
-        <p className="mt-0.5 text-xs text-white/55 sm:text-sm">({profile.nickname_th})</p>
-        <Link
-          href={`/member/section?section=${encodeURIComponent(profile.section ?? "")}`}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          className="mt-2 inline-flex rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/75 transition-colors hover:border-white/30 hover:bg-white/10 sm:mt-2.5 sm:px-3 sm:py-1 sm:text-xs"
-        >
-          {profile.section}
-        </Link>
-      </div>
-
-      <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/10" />
-    </div>
-  );
-}
-
-function CardBack({ profile }: { profile: Profile }) {
-  return (
-    <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-slate-950 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-slate-900/10">
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.18]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, rgb(148 163 184) 1px, transparent 0)",
-          backgroundSize: "14px 14px",
-        }}
-      />
-      <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/15" />
-
-      <div className="relative p-3.5 sm:p-5">
-        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3 sm:gap-3 sm:pb-4">
-          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-white/25 sm:h-11 sm:w-11">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={profile.url}
-              alt=""
-              decoding="async"
-              draggable={false}
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-white sm:text-sm">
-              {profile.full_name_th}
-            </p>
-            <p className="truncate text-xs text-white/55">({profile.nickname_th})</p>
-            <p className="truncate text-xs text-white/55">({profile.pbri_id})</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function MemberDetailPanel({
   profiles,
   selectedId,
@@ -200,10 +67,10 @@ function MemberDetailPanel({
 
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-12">
-      <InspectCard
+      <MemberInspectCard
         resetKey={selectedProfile.id}
-        front={<CardFront profile={selectedProfile} />}
-        back={<CardBack profile={selectedProfile} />}
+        profile={selectedProfile}
+        customization={selectedProfile.customization}
         ariaLabel={`การ์ดของ ${selectedProfile.full_name_th} — ลากเพื่อหมุน คลิกเพื่อพลิก`}
       />
     </div>
@@ -212,7 +79,7 @@ function MemberDetailPanel({
 
 const MIN_SCALE = 0.72;
 const MAX_SCALE = 1;
-const MAX_DIST = 160; // px from center at which item hits MIN_SCALE
+const MAX_DIST = 160;
 
 const IDLE_FRAMES_BEFORE_SLEEP = 12;
 
@@ -237,7 +104,6 @@ function useCenterScale(
       const center = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
       const items = Array.from(itemRefs.current.values());
 
-      // Read every rect first, then write — interleaving them forces a reflow per item.
       const centers = items.map((el) => {
         const r = el.getBoundingClientRect();
         return axis === "x" ? r.left + r.width / 2 : r.top + r.height / 2;
@@ -246,7 +112,7 @@ function useCenterScale(
       let changed = false;
       items.forEach((el, i) => {
         const dist = Math.min(Math.abs(centers[i] - center), MAX_DIST);
-        const t = 1 - dist / MAX_DIST; // 1 at center, 0 at edge
+        const t = 1 - dist / MAX_DIST;
         const previous = applied.get(el);
         if (previous !== undefined && Math.abs(previous - t) < 0.004) return;
 
@@ -344,40 +210,19 @@ function AvatarCarousel({
       className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto py-3"
       style={{ paddingLeft: edgePadding, paddingRight: edgePadding }}
     >
-      {profiles.map((profile) => {
-        const isSelected = String(profile.id) === selectedId;
-
-        return (
-          <button
-            key={profile.id}
-            ref={(el) => {
-              if (el) itemRefs.current.set(profile.id, el);
-              else itemRefs.current.delete(profile.id);
-            }}
-            type="button"
-            onClick={() => onSelect(String(profile.id))}
-            className={cn(
-              "flex shrink-0 snap-center items-center rounded-full border-2 p-1.5 transition-colors sm:p-2",
-              isSelected
-                ? "border-slate-500 bg-slate-200 shadow-md"
-                : "border-transparent bg-white hover:bg-slate-50"
-            )}
-            style={{ transformOrigin: "center" }}
-            aria-label={profile.full_name_th}
-          >
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full sm:h-16 sm:w-16">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={profile.url}
-                alt={profile.full_name_th}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </button>
-        );
-      })}
+      {profiles.map((profile) => (
+        <AvatarSelectorItem
+          key={profile.id}
+          profile={profile}
+          customization={profile.customization}
+          isSelected={String(profile.id) === selectedId}
+          onClick={() => onSelect(String(profile.id))}
+          buttonRef={(el) => {
+            if (el) itemRefs.current.set(profile.id, el);
+            else itemRefs.current.delete(profile.id);
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -427,27 +272,27 @@ function MemberList({
     <div
       ref={containerRef}
       className="space-y-2"
-      style={{  paddingBottom: edgePadding }}
+      style={{ paddingBottom: edgePadding }}
     >
-       <div className="flex h-[20rem] w-full items-center justify-center">
-      <h1 className="text-center text-5xl font-medium leading-tight  text-neutral-900 md:text-5xl lg:text-6xl dark:text-neutral-100 font-noto ">
-        <p>สมาชิกทั้งหมดของ</p>
-        <SquigglyText 
-          stepDuration={100}
-          scale={[6, 9]}
-          className="text-amber-500 font-bold"
-        >
-          PISTAR 
-        </SquigglyText> <SquigglyText
-          stepDuration={100}
-          scale={[6, 9]}
-          className="text-blue-500 font-bold"
-        >
-          28
-        </SquigglyText>
-        
-      </h1>
-    </div>
+      <div className="flex h-[20rem] w-full items-center justify-center">
+        <h1 className="text-center text-5xl font-medium leading-tight text-neutral-900 md:text-5xl lg:text-6xl dark:text-neutral-100 font-noto">
+          <p>สมาชิกทั้งหมดของ</p>
+          <SquigglyText
+            stepDuration={100}
+            scale={[6, 9]}
+            className="text-amber-500 font-bold"
+          >
+            PISTAR
+          </SquigglyText>{" "}
+          <SquigglyText
+            stepDuration={100}
+            scale={[6, 9]}
+            className="text-blue-500 font-bold"
+          >
+            28
+          </SquigglyText>
+        </h1>
+      </div>
       {profiles.map((profile) => {
         const isSelected = String(profile.id) === selectedId;
 
@@ -482,9 +327,7 @@ function MemberList({
               <p className="truncate font-medium text-base text-slate-900 sm:text-lg">
                 {profile.full_name_th}
               </p>
-              <p className="truncate text-sm text-slate-500">
-                {profile.nickname_th}
-              </p>
+              <p className="truncate text-sm text-slate-500">{profile.nickname_th}</p>
             </div>
           </button>
         );
@@ -504,7 +347,9 @@ export default function MemberPage() {
     async function fetchProfiles() {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, complete_name_th, pbri_id, nickname_th, section, full_name_th")
+        .select(
+          "id, complete_name_th, pbri_id, nickname_th, section, full_name_th, card_color, card_text_color, card_stickers, selector_stickers, privacy_settings"
+        )
         .order("id", { ascending: true });
 
       if (error) {
@@ -512,8 +357,14 @@ export default function MemberPage() {
         setError("ไม่สามารถโหลดข้อมูลสมาชิกได้");
       } else {
         const withImages = (data ?? []).map((row, i) => ({
-          ...row,
+          id: String(row.id),
+          complete_name_th: row.complete_name_th ?? "",
+          full_name_th: row.full_name_th ?? "",
+          nickname_th: row.nickname_th ?? "",
+          pbri_id: String(row.pbri_id ?? ""),
+          section: row.section ?? "",
           url: getPfpUrl(i),
+          customization: normalizeCustomization(row),
         }));
         setProfiles(withImages);
         if (withImages.length > 0) {
@@ -569,7 +420,6 @@ export default function MemberPage() {
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col lg:flex-row">
-      {/* Left (desktop) / Bottom (mobile): search + member list */}
       <section className="order-2 flex min-h-0 w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
         <div className="shrink-0 border-b border-slate-100 p-4">
           <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -584,7 +434,6 @@ export default function MemberPage() {
           </div>
         </div>
 
-        {/* Mobile: horizontal-scrolling circle avatar selector with distance-based scaling */}
         <div className="shrink-0 border-b border-slate-100 py-3 lg:hidden">
           {filteredProfiles.length === 0 ? (
             <p className="py-4 text-center text-sm text-slate-500">ไม่พบสมาชิกที่ค้นหา</p>
@@ -597,7 +446,6 @@ export default function MemberPage() {
           )}
         </div>
 
-        {/* Desktop: full vertical list with distance-based scaling */}
         <InertialScrollArea className="smooth-scrollbar hidden min-h-0 flex-1 p-4 pt-3 no-scrollbar lg:block">
           {filteredProfiles.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">ไม่พบสมาชิกที่ค้นหา</p>
@@ -611,7 +459,6 @@ export default function MemberPage() {
         </InertialScrollArea>
       </section>
 
-      {/* Right (desktop) / Top (mobile): selected member detail */}
       <InertialScrollArea className="order-1 smooth-scrollbar min-h-0 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
         {selectedId ? (
           <MemberDetailPanel profiles={profiles} selectedId={selectedId} />

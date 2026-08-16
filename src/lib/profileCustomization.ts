@@ -1,3 +1,5 @@
+import type { MemberProfile } from "@/components/member/types";
+
 export type CardSticker = {
   id: string;
   x: number;
@@ -137,3 +139,85 @@ export function normalizeCustomization(raw: unknown): ProfileCustomization {
 
 export const CUSTOMIZATION_SELECT =
   "id, full_name_th, nickname_th, pbri_id, section, complete_name_th, card_color, card_text_color, card_stickers, selector_stickers, privacy_settings";
+
+const PFP_COUNT = 32;
+
+async function getPfpUrl(index: number) {
+  const { supabase } = await import("@/lib/supabaseClient");
+  const filename = `pfp_${(index % PFP_COUNT) + 1}.JPG`;
+  const { data } = supabase.storage.from("images").getPublicUrl(`images/pfp/${filename}`);
+  return data.publicUrl;
+}
+
+export function buildCustomizationUpdatePayload(customization: ProfileCustomization) {
+  return {
+    card_color: customization.card_color,
+    card_text_color: customization.card_text_color,
+    card_stickers: customization.card_stickers,
+    selector_stickers: customization.selector_stickers,
+    privacy_settings: customization.privacy_settings,
+  };
+}
+
+export async function fetchProfileByAuthEmail(
+  email: string
+): Promise<{ profile: MemberProfile; customization: ProfileCustomization; email: string } | null> {
+  const { supabase } = await import("@/lib/supabaseClient");
+  const studentId = email.split("@")[0]?.trim() ?? "";
+  if (!studentId) return null;
+
+  let { data: row } = await supabase
+    .from("profiles")
+    .select(CUSTOMIZATION_SELECT)
+    .eq("pbri_id", studentId)
+    .maybeSingle();
+
+  if (!row && /^\d+$/.test(studentId)) {
+    const { data } = await supabase
+      .from("profiles")
+      .select(CUSTOMIZATION_SELECT)
+      .eq("pbri_id", Number(studentId))
+      .maybeSingle();
+    row = data;
+  }
+
+  if (!row) return null;
+
+  const { data: orderedProfiles } = await supabase
+    .from("profiles")
+    .select("id")
+    .order("id", { ascending: true });
+
+  const index =
+    orderedProfiles?.findIndex((profile) => String(profile.id) === String(row!.id)) ?? -1;
+  const url = await getPfpUrl(index >= 0 ? index : Number(row.id) - 1);
+
+  const profile: MemberProfile = {
+    id: String(row.id),
+    full_name_th: row.full_name_th ?? "",
+    nickname_th: row.nickname_th ?? "",
+    pbri_id: String(row.pbri_id ?? ""),
+    section: row.section ?? "",
+    url,
+    email,
+  };
+
+  return {
+    profile,
+    customization: normalizeCustomization(row),
+    email,
+  };
+}
+
+export async function saveProfileCustomization(
+  profileId: string,
+  customization: ProfileCustomization
+): Promise<{ error: string | null }> {
+  const { supabase } = await import("@/lib/supabaseClient");
+  const { error } = await supabase
+    .from("profiles")
+    .update(buildCustomizationUpdatePayload(customization))
+    .eq("id", profileId);
+
+  return { error: error?.message ?? null };
+}
