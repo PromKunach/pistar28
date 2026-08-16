@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
+import { useCurrentUser } from "@/lib/userProfile";
 import { InertialScrollArea } from "@/components/ui/inertial-scroll";
 import { AvatarSelectorItem } from "@/components/member/AvatarSelectorItem";
 import { MemberInspectCard } from "@/components/member/MemberInspectCard";
@@ -56,21 +58,35 @@ function DetailSkeleton() {
 function MemberDetailPanel({
   profiles,
   selectedId,
+  authStudentId,
+  authEmail,
 }: {
   profiles: Profile[];
   selectedId: string;
+  authStudentId: string | null;
+  authEmail: string | null;
 }) {
   const selectedProfile =
     profiles.find((p) => String(p.id) === selectedId) ?? profiles[0];
 
   if (!selectedProfile) return null;
 
+  const isOwnProfile =
+    Boolean(authStudentId) && selectedProfile.pbri_id === authStudentId;
+  const showEmail =
+    isOwnProfile && selectedProfile.customization.privacy_settings.show_email;
+  const profileWithEmail =
+    isOwnProfile && authEmail
+      ? { ...selectedProfile, email: authEmail }
+      : selectedProfile;
+
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-12">
       <MemberInspectCard
         resetKey={selectedProfile.id}
-        profile={selectedProfile}
+        profile={profileWithEmail}
         customization={selectedProfile.customization}
+        showEmail={showEmail}
         ariaLabel={`การ์ดของ ${selectedProfile.full_name_th} — ลากเพื่อหมุน คลิกเพื่อพลิก`}
       />
     </div>
@@ -337,6 +353,33 @@ function MemberList({
 }
 
 export default function MemberPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[calc(100dvh-3.5rem)] flex-col lg:flex-row">
+          <section className="order-1 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
+            <DetailSkeleton />
+          </section>
+          <section className="order-2 flex w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
+            <div className="border-b border-slate-100 p-4">
+              <div className="h-11 animate-pulse rounded-xl bg-slate-100" />
+            </div>
+            <div className="flex-1 overflow-hidden p-4">
+              <MemberListSkeleton />
+            </div>
+          </section>
+        </div>
+      }
+    >
+      <MemberPageContent />
+    </Suspense>
+  );
+}
+
+function MemberPageContent() {
+  const searchParams = useSearchParams();
+  const memberParam = searchParams.get("member");
+  const { user } = useCurrentUser();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -368,14 +411,25 @@ export default function MemberPage() {
         }));
         setProfiles(withImages);
         if (withImages.length > 0) {
-          setSelectedId(String(withImages[0].id));
+          const fromParam =
+            memberParam && withImages.some((p) => String(p.id) === memberParam)
+              ? memberParam
+              : null;
+          setSelectedId(fromParam ?? String(withImages[0].id));
         }
       }
       setLoading(false);
     }
 
     fetchProfiles();
-  }, []);
+  }, [memberParam]);
+
+  useEffect(() => {
+    if (!memberParam || profiles.length === 0) return;
+    if (profiles.some((p) => String(p.id) === memberParam)) {
+      setSelectedId(memberParam);
+    }
+  }, [memberParam, profiles]);
 
   useEffect(() => {
     profiles.forEach((profile) => {
@@ -461,7 +515,12 @@ export default function MemberPage() {
 
       <InertialScrollArea className="order-1 smooth-scrollbar min-h-0 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
         {selectedId ? (
-          <MemberDetailPanel profiles={profiles} selectedId={selectedId} />
+          <MemberDetailPanel
+            profiles={profiles}
+            selectedId={selectedId}
+            authStudentId={user?.studentId ?? null}
+            authEmail={user?.email ?? null}
+          />
         ) : (
           <div className="flex h-full items-center justify-center p-8 text-sm text-slate-500">
             เลือกสมาชิกเพื่อดูรายละเอียด

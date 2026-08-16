@@ -283,7 +283,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
 
                 <div className="p-1.5">
                   <MenuItem
-                    href="/member"
+                    href="/profile"
                     icon={UserCircle}
                     onClick={() => setMenuOpen(false)}
                   >
