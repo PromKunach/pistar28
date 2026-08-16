@@ -34,8 +34,11 @@ import { cn } from "@/lib/utils"
 import {
   createAnnouncement,
   deleteAnnouncement,
+  fetchAnnouncement,
   fetchAnnouncements,
   getAnnouncementImageUrl,
+  normalizeImageFocus,
+  announcementMutationErrorMessage,
   resolveAuthorsForRecords,
   updateAnnouncement,
   type AnnouncementRecord,
@@ -420,20 +423,7 @@ function announceLoadErrorMessage(error: unknown) {
 }
 
 function announcePostErrorMessage(error: unknown) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String((error as { message: string }).message)
-    if (message.includes("announcements") && message.includes("does not exist")) {
-      return "ไม่พบตาราง announcements กรุณารัน supabase/announcements.sql ก่อน"
-    }
-    if (message.includes("row-level security")) {
-      return "ไม่มีสิทธิ์โพสต์ ตรวจสอบนโยบาย RLS ใน Supabase"
-    }
-    if (message.includes("Bucket not found") || message.includes("storage")) {
-      return "อัปโหลดรูปไม่สำเร็จ ตรวจสอบ bucket images และนโยบาย storage"
-    }
-    return message
-  }
-  return "บันทึกโน้ตประกาศไม่ได้ กรุณาลองใหม่อีกครั้ง"
+  return announcementMutationErrorMessage(error)
 }
 
 function compressedFileName(name: string) {
@@ -1234,7 +1224,7 @@ function AddNoteDialog({
       setIconId(editRecord.icon_id)
       setTextColor(editRecord.text_color)
       setCardColor(editRecord.card_color)
-      setImageFocus(editRecord.image_focus ?? DEFAULT_IMAGE_FOCUS)
+      setImageFocus(normalizeImageFocus(editRecord.image_focus))
 
       const existingUrl = getAnnouncementImageUrl(editRecord.image_storage_path)
       if (existingUrl) {
@@ -1281,9 +1271,12 @@ function AddNoteDialog({
   }, [])
 
   const isEditing = Boolean(editRecord)
+  const canEditRecord =
+    !isEditing || (author && editRecord?.author_pbri_id === author.studentId)
   const canSubmit =
     name.trim().length > 0 &&
     Boolean(author) &&
+    canEditRecord &&
     !isCompressing &&
     !isSubmitting &&
     !isDeleting
@@ -1359,7 +1352,9 @@ function AddNoteDialog({
                 </h2>
                 <p className="text-sm text-neutral-500">
                   {isEditing
-                    ? "ปรับรายละเอียดของโน้ตนี้ แล้วบันทึกการเปลี่ยนแปลง"
+                    ? canEditRecord
+                      ? "ปรับรายละเอียดของโน้ตนี้ แล้วบันทึกการเปลี่ยนแปลง"
+                      : "เฉพาะผู้สร้างโน้ตเท่านั้นที่แก้ไขได้"
                     : "โน้ตนี้จะถูกเพิ่มไว้ด้านบนของกริด"}
                 </p>
               </div>
@@ -1749,9 +1744,16 @@ function BentoDemo() {
 
   const handlePost = useCallback(
     async (draft: NoteDraft) => {
-      if (editRecord) {
+      const targetRecord =
+        editRecord ?? (editId ? await fetchAnnouncement(editId) : null)
+
+      if (editId && targetRecord) {
+        if (user && targetRecord.author_pbri_id !== user.studentId) {
+          throw new Error("คุณไม่มีสิทธิ์แก้ไขโน้ตนี้")
+        }
+
         const record = await updateAnnouncement({
-          id: editRecord.id,
+          id: targetRecord.id,
           name: draft.name,
           description: draft.description,
           iconId: draft.iconId,
@@ -1762,7 +1764,7 @@ function BentoDemo() {
           imageName: draft.imageName,
           imageMeta: draft.imageMeta,
           imageRemoved: draft.imageRemoved,
-          previousStoragePath: editRecord.image_storage_path,
+          previousStoragePath: targetRecord.image_storage_path,
         })
 
         setRecords((current) =>
@@ -1795,7 +1797,7 @@ function BentoDemo() {
       })
       setIsDialogOpen(false)
     },
-    [editRecord, load, router]
+    [editRecord, editId, load, router, user]
   )
 
   const handleDelete = useCallback(async () => {

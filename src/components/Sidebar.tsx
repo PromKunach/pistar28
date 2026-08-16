@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 // ---------------------------------------------
 // Config — edit this to reshape the nav
@@ -34,6 +35,24 @@ type SubItem = {
 
 function isExternalHref(href: string) {
   return /^https?:\/\//i.test(href.trim());
+}
+
+function isExactNavMatch(pathname: string, href: string) {
+  const trimmedHref = href.trim();
+  return pathname === trimmedHref;
+}
+
+function isNavHrefActive(pathname: string, href: string) {
+  const trimmedHref = href.trim();
+  if (trimmedHref === "/") return pathname === "/";
+  return pathname === trimmedHref || pathname.startsWith(`${trimmedHref}/`);
+}
+
+function isNavItemActive(pathname: string, item: NavItem) {
+  if (item.children?.length) {
+    return item.children.some((child) => isExactNavMatch(pathname, child.href));
+  }
+  return isNavHrefActive(pathname, item.href);
 }
 
 function NavSubLink({
@@ -154,6 +173,7 @@ export default function Sidebar({
   desktopCollapsed,
   onToggleDesktop,
 }: SidebarProps) {
+  const pathname = usePathname();
   // When collapsed on desktop, add lg:hidden to text/labels so they
   // vanish at the lg breakpoint but still show normally on the mobile drawer.
   const labelClass = desktopCollapsed ? "lg:hidden" : "";
@@ -192,7 +212,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.5.0
+            version : 1.5.1
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
@@ -235,8 +255,12 @@ export default function Sidebar({
               <ul className="space-y-0.5">
                 {section.items.map((item) => {
                   const isOpen = openItems[item.label] ?? false;
+                  const isActive = isNavItemActive(pathname, item);
                   // Collapsed desktop rail: don't allow expand, behave like a plain link
                   const canExpand = item.expandable && !desktopCollapsed;
+                  const navItemClass = isActive
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-700 hover:bg-slate-50";
 
                   return (
                     <li key={item.label}>
@@ -244,7 +268,7 @@ export default function Sidebar({
                         <button
                           type="button"
                           onClick={() => toggleItem(item.label)}
-                          className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                          className={`group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium ${navItemClass}`}
                         >
                           <item.icon className="h-[18px] w-[18px] shrink-0" />
                           <span className="flex-1 truncate text-left">{item.label}</span>
@@ -257,7 +281,7 @@ export default function Sidebar({
                       ) : (
                         <Link
                           href={item.href}
-                          className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${
+                          className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium ${navItemClass} ${
                             desktopCollapsed ? "lg:justify-center" : ""
                           }`}
                           title={desktopCollapsed ? item.label : undefined}
@@ -280,14 +304,21 @@ export default function Sidebar({
                           }`}
                         >
                           <ul className="overflow-hidden pl-9">
-                            {item.children.map((sub) => (
+                            {item.children.map((sub) => {
+                              const isSubActive = isExactNavMatch(pathname, sub.href);
+                              return (
                               <li key={`${sub.label}-${sub.href}`}>
                                 <NavSubLink
                                   {...sub}
-                                  className="block py-1.5 text-sm text-slate-500 hover:text-slate-800"
+                                  className={`block rounded-md py-1.5 text-sm ${
+                                    isSubActive
+                                      ? "bg-slate-100 text-slate-900"
+                                      : "text-slate-500 hover:text-slate-800"
+                                  }`}
                                 />
                               </li>
-                            ))}
+                              );
+                            })}
                           </ul>
                         </div>
                       )}

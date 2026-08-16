@@ -39,6 +39,32 @@ import {
   ZoomOut,
 } from "lucide-react"
 
+
+import { PaperDateCard } from "@/app/(app)/appointment/PaperDateCard"
+import {
+  getAppointmentAccentColor,
+  TagSelector,
+  TONE_ACCENT,
+} from "@/app/(app)/appointment/appointment-ui"
+import {
+  appointmentDateLabel,
+  appendBoardSourceToText,
+  createAppointmentsFromDraft,
+  deleteAppointment,
+  fetchAppointmentsByIds,
+  parseScheduledDate,
+  recordToEditDraft,
+  updateAppointment,
+  type AppointmentDraft,
+  type AppointmentRecord,
+  type AppointmentTone,
+} from "@/lib/appointments"
+import {
+  fetchSavedAppointmentTags,
+  getSavedTagKey,
+  upsertSavedAppointmentTag,
+  type SavedAppointmentTag,
+} from "@/lib/appointmentTags"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,6 +76,7 @@ import {
   BOARD_WIDTH,
   canEditBlock,
   createBoard,
+  createAppointmentBlock,
   createCommentBlock,
   createCounterBlock,
   createDockBlock,
@@ -57,12 +84,14 @@ import {
   createTextBlock,
   COMMENT_IMAGE_MAX_BYTES,
   COMMENT_IMAGE_MAX_DIMENSION,
+  DEFAULT_APPOINTMENT_WIDTH,
   DEFAULT_COMMENT_WIDTH,
   DEFAULT_COUNTER_WIDTH,
   DEFAULT_DOCK_WIDTH,
   DEFAULT_LINK_WIDTH,
   LINK_NODE_SIZE,
   fetchBoard,
+  isAppointmentBlock,
   isCommentBlock,
   isCounterBlock,
   isDockBlock,
@@ -72,6 +101,7 @@ import {
   recordToBoardContent,
   updateBoard,
   type BoardBlock,
+  type BoardAppointmentBlock,
   type BoardCommentBlock,
   type BoardCommentEntry,
   type BoardConnection,
@@ -177,6 +207,13 @@ function BlockKindIcon({
       />
     )
   }
+  if (isAppointmentBlock(block)) {
+    return (
+      <CalendarClock
+        className={cn("h-4 w-4 shrink-0 text-neutral-500", className)}
+      />
+    )
+  }
   return <Type className={cn("h-4 w-4 shrink-0 text-neutral-500", className)} />
 }
 
@@ -197,6 +234,9 @@ function blockLabel(block: BoardBlock) {
     const count = block.dockedBlockIds.length
     return count > 0 ? ` Dock  (${count})` : " Dock "
   }
+  if (isAppointmentBlock(block)) {
+    return "นัดหมาย"
+  }
   const text = block.text.trim()
   return text.length > 72 ? `${text.slice(0, 72)}…` : text || "ข้อความไม่มีชื่อ"
 }
@@ -209,6 +249,7 @@ const COUNTER_PILL_ANCHOR_HEIGHT = 58
 /** Collapsed comment block shell — expanded thread does not move connections. */
 const COMMENT_BLOCK_ANCHOR_HEIGHT = DEFAULT_BLOCK_HEIGHT
 const DEFAULT_DOCK_BLOCK_HEIGHT = 168
+const DEFAULT_APPOINTMENT_BLOCK_HEIGHT = 168
 const DOCK_SNAP_GAP_PX = 8
 const DOCK_SNAP_THRESHOLD_PX = 48
 const DOCK_SNAP_GAP_FRACTION = DOCK_SNAP_GAP_PX / BOARD_HEIGHT
@@ -276,6 +317,9 @@ function blockConnectionHeight(block: BoardBlock, heights: Record<string, number
   if (isDockBlock(block)) {
     return heights[block.id] ?? DEFAULT_DOCK_BLOCK_HEIGHT
   }
+  if (isAppointmentBlock(block)) {
+    return heights[block.id] ?? DEFAULT_APPOINTMENT_BLOCK_HEIGHT
+  }
   return heights[block.id] ?? DEFAULT_BLOCK_HEIGHT
 }
 
@@ -313,6 +357,7 @@ function blockLayoutWidth(block: BoardBlock) {
   if (isCommentBlock(block)) return DEFAULT_COMMENT_WIDTH
   if (isLinkBlock(block)) return DEFAULT_LINK_WIDTH
   if (isDockBlock(block)) return DEFAULT_DOCK_WIDTH
+  if (isAppointmentBlock(block)) return DEFAULT_APPOINTMENT_WIDTH
   return block.width
 }
 
@@ -495,7 +540,73 @@ function isDockSnapTarget(
 
 function isValidConnectionEndpoints(from: BoardBlock, to: BoardBlock) {
   if (isDockBlock(from) && isDockBlock(to)) return false
+  if (isAppointmentBlock(from) && !isTextBlock(to)) return false
+  if (isAppointmentBlock(to) && !isTextBlock(from)) return false
   return true
+}
+
+function isAppointmentTextPair(from: BoardBlock, to: BoardBlock) {
+  return (
+    (isTextBlock(from) && isAppointmentBlock(to)) ||
+    (isAppointmentBlock(from) && isTextBlock(to))
+  )
+}
+
+function textBlockFromPair(from: BoardBlock, to: BoardBlock): BoardTextBlock | null {
+  if (isTextBlock(from)) return from
+  if (isTextBlock(to)) return to
+  return null
+}
+
+function appointmentMessageConnections(
+  appointmentBlockId: string,
+  blocks: BoardBlock[],
+  connections: BoardConnection[]
+) {
+  return connections.filter((connection) => {
+    if (connection.fromId !== appointmentBlockId && connection.toId !== appointmentBlockId) {
+      return false
+    }
+    const otherId =
+      connection.fromId === appointmentBlockId ? connection.toId : connection.fromId
+    const other = blocks.find((block) => block.id === otherId)
+    return other && isTextBlock(other)
+  })
+}
+
+function connectionTagLabel(connection: BoardConnection) {
+  if (connection.customTagLabel) return connection.customTagLabel
+  if (connection.tone === "red") return "สำคัญ"
+  if (connection.tone === "blue") return "ทั่วไป"
+  return "แท็ก"
+}
+
+function connectionAccentColor(connection: BoardConnection) {
+  if (connection.customTagColor) return connection.customTagColor
+  const tone = connection.tone ?? "neutral"
+  return TONE_ACCENT[tone]
+}
+
+function cubicBezierPoint(
+  t: number,
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  p3: Point
+): Point {
+  const u = 1 - t
+  return {
+    x:
+      u * u * u * p0.x +
+      3 * u * u * t * p1.x +
+      3 * u * t * t * p2.x +
+      t * t * t * p3.x,
+    y:
+      u * u * u * p0.y +
+      3 * u * u * t * p1.y +
+      3 * u * t * t * p2.y +
+      t * t * t * p3.y,
+  }
 }
 
 function computeDockSnapPosition(
@@ -706,16 +817,24 @@ function connectionGeometryFromRects(fromRect: BlockRect, toRect: BlockRect) {
   const fromCenter = rectCenter(fromRect)
   const start = edgeAnchor(fromRect, toCenter)
   const end = edgeAnchor(toRect, fromCenter)
+  const startNormal = edgeOutward(start, fromRect)
+  const endNormal = edgeOutward(end, toRect)
+  const dist = Math.hypot(end.x - start.x, end.y - start.y)
+  const offset = Math.min(Math.max(dist * 0.35, 48), 180)
+  const cp1 = {
+    x: start.x + startNormal.x * offset,
+    y: start.y + startNormal.y * offset,
+  }
+  const cp2 = {
+    x: end.x + endNormal.x * offset,
+    y: end.y + endNormal.y * offset,
+  }
 
   return {
-    path: bezierPath(
-      start,
-      edgeOutward(start, fromRect),
-      end,
-      edgeOutward(end, toRect)
-    ),
+    path: bezierPath(start, startNormal, end, endNormal),
     start,
     end,
+    midpoint: cubicBezierPoint(0.5, start, cp1, cp2, end),
   }
 }
 
@@ -768,21 +887,119 @@ function renderBoardConnections(
       blockHeights,
       dockedOutIds
     )
+    const accent = isAppointmentTextPair(from, to)
+      ? connectionAccentColor(connection)
+      : "rgb(82 82 91)"
 
     return (
       <g key={connection.id}>
         <path
           d={geometry.path}
           fill="none"
-          stroke="rgb(82 82 91)"
+          stroke={accent}
           strokeWidth="2.5"
           strokeLinecap="round"
         />
-        <circle cx={geometry.start.x} cy={geometry.start.y} r="4" fill="rgb(82 82 91)" />
-        <circle cx={geometry.end.x} cy={geometry.end.y} r="6" fill="rgb(82 82 91)" />
+        <circle cx={geometry.start.x} cy={geometry.start.y} r="4" fill={accent} />
+        <circle cx={geometry.end.x} cy={geometry.end.y} r="6" fill={accent} />
       </g>
     )
   })
+}
+
+function ConnectionTagEditor({
+  connection,
+  savedTags,
+  onClose,
+  onPersistTag,
+  onSave,
+}: {
+  connection: BoardConnection
+  savedTags: SavedAppointmentTag[]
+  onClose: () => void
+  onPersistTag: (label: string, color: string) => void | Promise<void>
+  onSave: (tag: {
+    tone: AppointmentTone
+    customTagLabel: string | null
+    customTagColor: string | null
+  }) => void | Promise<void>
+}) {
+  const [tone, setTone] = useState<AppointmentTone>(connection.tone ?? "neutral")
+  const [customTagLabel, setCustomTagLabel] = useState(connection.customTagLabel ?? null)
+  const [customTagColor, setCustomTagColor] = useState(connection.customTagColor ?? null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setTone(connection.tone ?? "neutral")
+    setCustomTagLabel(connection.customTagLabel ?? null)
+    setCustomTagColor(connection.customTagColor ?? null)
+  }, [connection])
+
+  return (
+    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="ปิด"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              เปลี่ยนแท็ก
+            </h3>
+            <p className="mt-0.5 text-xs text-neutral-500">เลือกแท็กสำหรับเส้นเชื่อมนี้</p>
+          </div>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="ปิด">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <TagSelector
+          tone={tone}
+          customTagLabel={customTagLabel}
+          customTagColor={customTagColor}
+          savedTags={savedTags}
+          onPersistTag={onPersistTag}
+          onChange={(tag) => {
+            setTone(tag.tone)
+            setCustomTagLabel(tag.customTagLabel)
+            setCustomTagColor(tag.customTagColor)
+          }}
+        />
+        <div className="mt-5 flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+            ยกเลิก
+          </Button>
+          <Button
+            type="button"
+            disabled={saving}
+            onClick={() => {
+              setSaving(true)
+              void (async () => {
+                try {
+                  await onSave({
+                    tone,
+                    customTagLabel,
+                    customTagColor,
+                  })
+                  onClose()
+                } finally {
+                  setSaving(false)
+                }
+              })()
+            }}
+          >
+            {saving ? "กำลังบันทึก..." : "บันทึก"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function isEditableTarget(target: EventTarget | null) {
@@ -1361,6 +1578,81 @@ function CounterPillRow({
       >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.75} />
       </button>
+    </div>
+  )
+}
+
+function AppointmentBlock({
+  block,
+  primaryAppointment,
+  linkCount,
+  isExpanded,
+  canEdit,
+  topStackIds,
+  onPointerDown,
+  onPointerUp,
+  onSelect,
+  onMeasure,
+}: {
+  block: BoardAppointmentBlock
+  primaryAppointment: AppointmentRecord | null
+  linkCount: number
+  isExpanded: boolean
+  canEdit: boolean
+  topStackIds: Set<string>
+  onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
+  onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void
+  onSelect: () => void
+  onMeasure: (height: number) => void
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null)
+  const displayDate = primaryAppointment
+    ? parseScheduledDate(primaryAppointment.scheduled_date)
+    : new Date()
+  const accentColor = primaryAppointment
+    ? getAppointmentAccentColor(primaryAppointment)
+    : null
+
+  useLayoutEffect(() => {
+    const element = anchorRef.current
+    if (!element) return
+
+    const report = () => onMeasure(element.offsetHeight)
+    report()
+
+    const observer = new ResizeObserver(report)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [onMeasure, primaryAppointment?.id, primaryAppointment?.scheduled_date, linkCount])
+
+  return (
+    <div
+      data-block={block.id}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onClick={onSelect}
+      style={{
+        left: `${block.x * 100}%`,
+        top: `${block.y * 100}%`,
+        width: `${DEFAULT_APPOINTMENT_WIDTH * 100}%`,
+      }}
+      className={cn(
+        "absolute cursor-move select-none transition-transform duration-300 ease-out",
+        blockStackLayerClass(block.id, topStackIds, { isExpanded }),
+        isExpanded && "scale-[1.02]"
+      )}
+    >
+      <div
+        ref={anchorRef}
+        data-appointment-block-anchor
+        className="relative w-full rounded-lg bg-white/90 p-1 shadow-md ring-1 ring-neutral-200/80 dark:bg-neutral-900/90 dark:ring-neutral-700"
+      >
+        <PaperDateCard date={displayDate} accentColor={accentColor} mini />
+        <p className="mt-0.5 px-1 text-center text-[10px] text-neutral-500">
+          {linkCount > 0 ? `${linkCount} ข้อความ` : "เชื่อมข้อความ"}
+        </p>
+      </div>
     </div>
   )
 }
@@ -2008,6 +2300,7 @@ export default function AnnouncementBoardPage() {
   const [isPanelEditing, setIsPanelEditing] = useState(false)
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null)
   const [title, setTitle] = useState<string | null>(null)
+  const [announcementAuthorId, setAnnouncementAuthorId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -2032,6 +2325,9 @@ export default function AnnouncementBoardPage() {
   const [dockHoverId, setDockHoverId] = useState<string | null>(null)
   const [dockedOutIds, setDockedOutIds] = useState<Set<string>>(() => new Set())
   const [dockOutHidden, setDockOutHidden] = useState<Set<string>>(() => new Set())
+  const [appointmentCache, setAppointmentCache] = useState<Record<string, AppointmentRecord>>({})
+  const [savedAppointmentTags, setSavedAppointmentTags] = useState<SavedAppointmentTag[]>([])
+  const [tagEditorConnectionId, setTagEditorConnectionId] = useState<string | null>(null)
   const componentMenuRef = useRef<HTMLDivElement>(null)
   const componentMenuPanelRef = useRef<HTMLDivElement>(null)
   const selectedIdRef = useRef<string | null>(null)
@@ -2351,7 +2647,10 @@ export default function AnnouncementBoardPage() {
 
       try {
         const record = await fetchAnnouncement(announcementId)
-        if (!cancelled && record) setTitle(record.name)
+        if (!cancelled && record) {
+          setTitle(record.name)
+          setAnnouncementAuthorId(record.author_pbri_id)
+        }
       } catch {
         // Title is decorative — the board still works without it.
       }
@@ -2362,6 +2661,153 @@ export default function AnnouncementBoardPage() {
       cancelled = true
     }
   }, [announcementId])
+
+  useEffect(() => {
+    if (!user) {
+      setSavedAppointmentTags([])
+      return
+    }
+
+    void fetchSavedAppointmentTags(user.studentId).then((tags) => {
+      setSavedAppointmentTags(tags)
+    })
+  }, [user])
+
+  useEffect(() => {
+    const ids = connections
+      .map((connection) => connection.appointmentId)
+      .filter((id): id is string => Boolean(id))
+
+    if (ids.length === 0) return
+
+    void fetchAppointmentsByIds(ids).then((records) => {
+      setAppointmentCache((current) => {
+        const next = { ...current }
+        let changed = false
+        for (const record of records) {
+          if (!next[record.id]) {
+            next[record.id] = record
+            changed = true
+          }
+        }
+        return changed ? next : current
+      })
+    })
+  }, [connections])
+
+  const handlePersistAppointmentTag = useCallback(
+    async (label: string, color: string) => {
+      if (!user) return
+
+      const tag = await upsertSavedAppointmentTag(user.studentId, label, color)
+      setSavedAppointmentTags((current) => {
+        const key = getSavedTagKey(tag)
+        const next = current.filter((item) => getSavedTagKey(item) !== key)
+        next.push(tag)
+        return next.sort((left, right) => left.label.localeCompare(right.label, "th"))
+      })
+    },
+    [user]
+  )
+
+  const createAppointmentForConnection = useCallback(
+    async (connectionId: string, fromBlock: BoardBlock, toBlock: BoardBlock) => {
+      if (!user) return
+
+      const textBlock = textBlockFromPair(fromBlock, toBlock)
+      if (!textBlock) return
+
+      const connection = connectionsRef.current.find((item) => item.id === connectionId)
+      const tone = connection?.tone ?? "neutral"
+      const customTagLabel = connection?.customTagLabel ?? null
+      const customTagColor = connection?.customTagColor ?? null
+
+      const today = new Date()
+      const boardLabel = title?.trim() || "บอร์ด"
+      const draft: AppointmentDraft = {
+        title: appendBoardSourceToText(
+          textBlock.text.trim() || "ไม่มีชื่อ",
+          boardLabel
+        ),
+        description: appendBoardSourceToText(
+          textBlock.description.trim(),
+          boardLabel
+        ),
+        isRange: false,
+        startDate: today,
+        endDate: today,
+        tone,
+        customTagLabel,
+        customTagColor,
+      }
+
+      const records = await createAppointmentsFromDraft(draft, user.studentId)
+      const primary = records[0]
+      if (!primary) throw new Error("บันทึกนัดหมายไม่สำเร็จ")
+
+      setConnections((current) =>
+        current.map((item) =>
+          item.id === connectionId ? { ...item, appointmentId: primary.id } : item
+        )
+      )
+      setAppointmentCache((current) => ({ ...current, [primary.id]: primary }))
+      setIsDirty(true)
+    },
+    [user, title]
+  )
+
+  const updateConnectionTag = useCallback(
+    async (
+      connectionId: string,
+      tag: {
+        tone: AppointmentTone
+        customTagLabel: string | null
+        customTagColor: string | null
+      }
+    ) => {
+      if (!user) return
+
+      const connection = connectionsRef.current.find((item) => item.id === connectionId)
+      if (!connection) return
+
+      setConnections((current) =>
+        current.map((item) =>
+          item.id === connectionId
+            ? {
+                ...item,
+                tone: tag.tone,
+                customTagLabel: tag.customTagLabel,
+                customTagColor: tag.customTagColor,
+              }
+            : item
+        )
+      )
+      setIsDirty(true)
+
+      if (!connection.appointmentId) return
+
+      const appointment = appointmentCache[connection.appointmentId]
+      if (!appointment) return
+
+      const draft = {
+        ...recordToEditDraft(appointment),
+        tone: tag.tone,
+        customTagLabel: tag.customTagLabel,
+        customTagColor: tag.customTagColor,
+      }
+
+      const records = await updateAppointment(
+        connection.appointmentId,
+        draft,
+        user.studentId
+      )
+      const primary = records[0]
+      if (primary) {
+        setAppointmentCache((current) => ({ ...current, [primary.id]: primary }))
+      }
+    },
+    [appointmentCache, user]
+  )
 
   useLayoutEffect(() => {
     if (!componentMenuOpen) return
@@ -2490,6 +2936,24 @@ export default function AnnouncementBoardPage() {
   }, [pruneEmptyBlock])
 
   const deleteBlock = useCallback((id: string) => {
+    const removedConnections = connectionsRef.current.filter(
+      (connection) => connection.fromId === id || connection.toId === id
+    )
+    for (const connection of removedConnections) {
+      if (connection.appointmentId) {
+        void deleteAppointment(connection.appointmentId).catch(() => undefined)
+      }
+    }
+    if (removedConnections.some((connection) => connection.appointmentId)) {
+      setAppointmentCache((current) => {
+        const next = { ...current }
+        for (const connection of removedConnections) {
+          if (connection.appointmentId) delete next[connection.appointmentId]
+        }
+        return next
+      })
+    }
+
     setBlocks((current) =>
       current
         .filter((block) => block.id !== id)
@@ -2540,8 +3004,18 @@ export default function AnnouncementBoardPage() {
   }, [])
 
   const disconnectConnection = useCallback((connectionId: string) => {
+    const connection = connectionsRef.current.find((item) => item.id === connectionId)
+    if (connection?.appointmentId) {
+      void deleteAppointment(connection.appointmentId).catch(() => undefined)
+      setAppointmentCache((current) => {
+        const next = { ...current }
+        delete next[connection.appointmentId!]
+        return next
+      })
+    }
+
     setConnections((current) =>
-      current.filter((connection) => connection.id !== connectionId)
+      current.filter((item) => item.id !== connectionId)
     )
     setIsDirty(true)
   }, [])
@@ -2732,6 +3206,26 @@ export default function AnnouncementBoardPage() {
     setComponentMenuOpen(false)
   }, [pan, viewport, user, openPanel, zoom])
 
+  const addAppointmentBlock = useCallback(() => {
+    const centerX = (-pan.x + viewport.width / 2) / (BOARD_WIDTH * zoom)
+    const centerY = (-pan.y + viewport.height / 2) / (BOARD_HEIGHT * zoom)
+    const block = createAppointmentBlock(
+      clamp(centerX - DEFAULT_APPOINTMENT_WIDTH / 2, 0, 1 - DEFAULT_APPOINTMENT_WIDTH),
+      clamp(centerY - 0.08, 0, 0.9),
+      {
+        studentId: user?.studentId ?? "ไม่ระบุ",
+        displayName: user?.displayName ?? "ผู้เยี่ยมชม",
+        avatarUrl: user?.avatarUrl,
+      }
+    )
+
+    setBlocks((current) => [...current, block])
+    setExpandedIds((current) => new Set([...current, block.id]))
+    openPanel(block.id, false)
+    setIsDirty(true)
+    setComponentMenuOpen(false)
+  }, [pan, viewport, user, openPanel, zoom])
+
   const appendComment = useCallback(
     (blockId: string, text: string, imageDataUrl?: string) => {
       if (!user) return
@@ -2840,6 +3334,13 @@ export default function AnnouncementBoardPage() {
         return
       }
 
+      const connectionId = crypto.randomUUID()
+      const defaultTag = {
+        tone: "neutral" as AppointmentTone,
+        customTagLabel: null,
+        customTagColor: null,
+      }
+
       setConnections((current) => {
         const alreadyConnected = current.some(
           (connection) =>
@@ -2851,18 +3352,36 @@ export default function AnnouncementBoardPage() {
         return [
           ...current,
           {
-            id: crypto.randomUUID(),
+            id: connectionId,
             fromId: connectingFromId,
             toId: id,
             createdAt: new Date().toISOString(),
+            appointmentId: null,
+            tone: defaultTag.tone,
+            customTagLabel: defaultTag.customTagLabel,
+            customTagColor: defaultTag.customTagColor,
           },
         ]
       })
+
+      if (isAppointmentTextPair(fromBlock, toBlock) && user) {
+        void createAppointmentForConnection(connectionId, fromBlock, toBlock).catch(
+          () => undefined
+        )
+      }
+
       setConnectingFromId(null)
       openPanel(id, false)
       setIsDirty(true)
     },
-    [connectingFromId, toggleBlockExpanded, openPanel, closePanel]
+    [
+      connectingFromId,
+      toggleBlockExpanded,
+      openPanel,
+      closePanel,
+      user,
+      createAppointmentForConnection,
+    ]
   )
 
   const openBlockEditor = useCallback(
@@ -2964,7 +3483,8 @@ export default function AnnouncementBoardPage() {
       (element.querySelector("[data-counter-pill-anchor]") as HTMLElement | null) ??
       (element.querySelector("[data-comment-block-anchor]") as HTMLElement | null) ??
       (element.querySelector("[data-link-node-anchor]") as HTMLElement | null) ??
-      (element.querySelector("[data-dock-block-anchor]") as HTMLElement | null)
+      (element.querySelector("[data-dock-block-anchor]") as HTMLElement | null) ??
+      (element.querySelector("[data-appointment-block-anchor]") as HTMLElement | null)
     const measureEl = anchorEl ?? element
 
     element.setPointerCapture(event.pointerId)
@@ -3180,6 +3700,7 @@ export default function AnnouncementBoardPage() {
     if ((event.target as HTMLElement).closest("[data-counter-control]")) return
     if ((event.target as HTMLElement).closest("[data-comment-control]")) return
     if ((event.target as HTMLElement).closest("[data-link-node]")) return
+    if ((event.target as HTMLElement).closest("[data-connection-tag]")) return
     if ((event.target as HTMLElement).closest("[data-board-panel]")) return
 
     event.preventDefault()
@@ -3199,8 +3720,18 @@ export default function AnnouncementBoardPage() {
   }
 
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null
+  const selectedAppointmentLinks =
+    selectedBlock && isAppointmentBlock(selectedBlock)
+      ? appointmentMessageConnections(selectedBlock.id, blocks, connections)
+      : []
+  const tagEditorConnection =
+    tagEditorConnectionId
+      ? connections.find((connection) => connection.id === tagEditorConnectionId) ?? null
+      : null
   const canEditSelected = selectedBlock ? canEditBlock(selectedBlock, user) : false
   const canAddBlocks = authorReady && Boolean(user)
+  const canEditAnnouncementMeta =
+    Boolean(user) && announcementAuthorId !== null && user?.studentId === announcementAuthorId
 
   const selectedChildBlocks = useMemo(() => {
     if (!selectedBlock) return []
@@ -3278,14 +3809,14 @@ export default function AnnouncementBoardPage() {
 
         <div className="-mx-3 min-w-0 overflow-x-auto overscroll-x-contain px-3 [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-x sm:mx-0 sm:ms-auto sm:flex-1 sm:px-0 [&::-webkit-scrollbar]:hidden">
           <div className="flex w-max items-center gap-2 sm:ms-auto sm:justify-end sm:pe-1">
-          {canAddBlocks && (
+          {canEditAnnouncementMeta && (
             <Button
               variant="outline"
               render={<Link href={`/announces?edit=${announcementId}`} />}
               nativeButton={false}
             >
               <Pencil className="me-2 h-4 w-4" />
-              แก้ไขบอร์ด
+              แก้ไขการ์ด
             </Button>
           )}
           {canAddBlocks && (
@@ -3353,6 +3884,17 @@ export default function AnnouncementBoardPage() {
                         <Paperclip className="h-3.5 w-3.5" />
                       </span>
                       Node ลิงก์
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={addAppointmentBlock}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-300 bg-white text-neutral-600">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                      </span>
+                      Node นัดหมาย
                     </button>
                     <button
                       type="button"
@@ -3466,6 +4008,77 @@ export default function AnnouncementBoardPage() {
             )}
           </svg>
 
+          <div className="pointer-events-none absolute inset-0">
+            {connections.map((connection) => {
+              const from = blocks.find((block) => block.id === connection.fromId)
+              const to = blocks.find((block) => block.id === connection.toId)
+              if (!from || !to || !isAppointmentTextPair(from, to)) return null
+
+              const fromVisible = isConnectionEndpointVisible(
+                connection.fromId,
+                connection.toId,
+                blocks,
+                dockedOutIds,
+                dockOutHidden
+              )
+              const toVisible = isConnectionEndpointVisible(
+                connection.toId,
+                connection.fromId,
+                blocks,
+                dockedOutIds,
+                dockOutHidden
+              )
+              if (!fromVisible || !toVisible) return null
+
+              const geometry = connectionGeometry(
+                from,
+                to,
+                blocks,
+                blockHeights,
+                dockedOutIds
+              )
+              const canEditTag =
+                canEditBlock(from, user) || canEditBlock(to, user)
+              const label = connectionTagLabel(connection)
+              const color = connectionAccentColor(connection)
+
+              return (
+                <button
+                  key={`tag-${connection.id}`}
+                  type="button"
+                  data-connection-tag
+                  disabled={!canEditTag}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    if (!canEditTag) return
+                    setTagEditorConnectionId(connection.id)
+                  }}
+                  className={cn(
+                    "pointer-events-auto absolute inline-flex max-w-[7rem] items-center gap-1 rounded-full border bg-white px-2 py-0.5 text-[10px] font-medium shadow-sm transition-colors dark:bg-neutral-900",
+                    canEditTag
+                      ? "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      : "cursor-default opacity-90"
+                  )}
+                  style={{
+                    left: `${(geometry.midpoint.x / BOARD_WIDTH) * 100}%`,
+                    top: `${(geometry.midpoint.y / BOARD_HEIGHT) * 100}%`,
+                    transform: "translate(-50%, -50%)",
+                    borderColor: color,
+                  }}
+                >
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="truncate text-neutral-700 dark:text-neutral-200">
+                    {label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
           {boardRenderBlocks.map((block) => {
             if (
               dockedBlockIds.has(block.id) &&
@@ -3541,6 +4154,36 @@ export default function AnnouncementBoardPage() {
                   onPointerUp={handlePointerUp}
                   onSelect={() => activateLinkBlock(block)}
                   onMeasure={(height) => reportBlockHeight(block.id, height)}
+                />
+              )
+            }
+
+            if (isAppointmentBlock(block)) {
+              const messageLinks = appointmentMessageConnections(
+                block.id,
+                blocks,
+                connections
+              )
+              const primaryAppointmentId = messageLinks.find(
+                (connection) => connection.appointmentId
+              )?.appointmentId
+              const primaryAppointment = primaryAppointmentId
+                ? appointmentCache[primaryAppointmentId] ?? null
+                : null
+
+              return (
+                <AppointmentBlock
+                  key={block.id}
+                  block={block}
+                  primaryAppointment={primaryAppointment}
+                  linkCount={messageLinks.length}
+                  isExpanded={expandedIds.has(block.id)}
+                  canEdit={canEditBlock(block, user)}
+                  topStackIds={topStackBlockIds}
+                  onPointerDown={sharedHandlers.onPointerDown}
+                  onPointerUp={sharedHandlers.onPointerUp}
+                  onSelect={sharedHandlers.onSelect}
+                  onMeasure={sharedHandlers.onMeasure}
                 />
               )
             }
@@ -3829,6 +4472,66 @@ export default function AnnouncementBoardPage() {
                     )}
                   </div>
                 </>
+              ) : isAppointmentBlock(selectedBlock) ? (
+                <>
+                  <div className="space-y-3.5">
+                    <Label>ข้อความที่เชื่อม</Label>
+                    {selectedAppointmentLinks.length > 0 ? (
+                      <ul className="mt-2 space-y-2">
+                        {selectedAppointmentLinks.map((connection) => {
+                          const otherId =
+                            connection.fromId === selectedBlock.id
+                              ? connection.toId
+                              : connection.fromId
+                          const textBlock = blocks.find((item) => item.id === otherId)
+                          if (!textBlock || !isTextBlock(textBlock)) return null
+                          const appointment = connection.appointmentId
+                            ? appointmentCache[connection.appointmentId]
+                            : null
+
+                          return (
+                            <li
+                              key={connection.id}
+                              className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800"
+                            >
+                              <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                                {textBlock.text.trim() || "ข้อความไม่มีชื่อ"}
+                              </p>
+                              {textBlock.description.trim() ? (
+                                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                                  {textBlock.description.trim()}
+                                </p>
+                              ) : null}
+                              {appointment ? (
+                                <p className="mt-2 text-xs text-neutral-500">
+                                  {appointmentDateLabel(appointment)}
+                                </p>
+                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => setTagEditorConnectionId(connection.id)}
+                                className="mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                                style={{ borderColor: connectionAccentColor(connection) }}
+                              >
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{
+                                    backgroundColor: connectionAccentColor(connection),
+                                  }}
+                                />
+                                {connectionTagLabel(connection)}
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="rounded-xl bg-neutral-50 px-4 py-3 text-sm text-neutral-500 dark:bg-neutral-800">
+                        เชื่อมข้อความเพื่อสร้างนัดหมาย — คลิกแท็กบนเส้นเชื่อมเพื่อเปลี่ยนแท็ก
+                      </p>
+                    )}
+                  </div>
+                </>
               ) : isDockBlock(selectedBlock) ? (
                 <>
                   <div className="space-y-3.5">
@@ -4012,8 +4715,10 @@ export default function AnnouncementBoardPage() {
             </div>
 
             <div className="space-y-3 border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
-              {canEditSelected && !isDockBlock(selectedBlock) && (
-                isPanelEditing ? (
+              {canEditSelected &&
+                !isDockBlock(selectedBlock) &&
+                !isAppointmentBlock(selectedBlock) &&
+                (isPanelEditing ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -4063,9 +4768,11 @@ export default function AnnouncementBoardPage() {
                       ? "ลบความคิดเห็น"
                       : isLinkBlock(selectedBlock)
                         ? "ลบลิงก์"
-                        : isDockBlock(selectedBlock)
-                          ? "ลบ Dock "
-                          : "ลบข้อความ"}
+                        : isAppointmentBlock(selectedBlock)
+                          ? "ลบนัดหมาย"
+                          : isDockBlock(selectedBlock)
+                            ? "ลบ Dock "
+                            : "ลบข้อความ"}
                 </Button>
               ) : (
                 <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
@@ -4076,9 +4783,11 @@ export default function AnnouncementBoardPage() {
                         ? "ลบ Node ความคิดเห็นนี้หรือไม่?"
                         : isLinkBlock(selectedBlock)
                           ? "ลบลิงก์นี้หรือไม่?"
-                          : isDockBlock(selectedBlock)
-                            ? "ลบ Dock นี้หรือไม่?"
-                            : "ลบข้อความนี้หรือไม่?"}
+                          : isAppointmentBlock(selectedBlock)
+                            ? "ลบ Node นัดหมายนี้หรือไม่?"
+                            : isDockBlock(selectedBlock)
+                              ? "ลบ Dock นี้หรือไม่?"
+                              : "ลบข้อความนี้หรือไม่?"}
                   </p>
                   <p className="text-xs leading-relaxed text-red-700/80 dark:text-red-300/80">
                     {isCounterBlock(selectedBlock)
@@ -4087,9 +4796,11 @@ export default function AnnouncementBoardPage() {
                         ? "ความคิดเห็นทั้งหมดและการเชื่อมต่อจะถูกลบออก"
                         : isLinkBlock(selectedBlock)
                           ? "ลิงก์และการเชื่อมต่อจะถูกลบออก"
-                          : isDockBlock(selectedBlock)
-                            ? " Dock จะถูกลบออก  Node ที่อยู่ภายในจะกลับไปแสดงบนบอร์ด"
-                            : "ข้อความ คำอธิบาย และการเชื่อมต่อทั้งหมดจะถูกลบออก"}
+                          : isAppointmentBlock(selectedBlock)
+                            ? "Node นัดหมายและนัดหมายที่เชื่อมจะถูกลบออก"
+                            : isDockBlock(selectedBlock)
+                              ? " Dock จะถูกลบออก  Node ที่อยู่ภายในจะกลับไปแสดงบนบอร์ด"
+                              : "ข้อความ คำอธิบาย และการเชื่อมต่อทั้งหมดจะถูกลบออก"}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -4199,6 +4910,16 @@ export default function AnnouncementBoardPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {tagEditorConnection && (
+        <ConnectionTagEditor
+          connection={tagEditorConnection}
+          savedTags={savedAppointmentTags}
+          onClose={() => setTagEditorConnectionId(null)}
+          onPersistTag={handlePersistAppointmentTag}
+          onSave={(tag) => updateConnectionTag(tagEditorConnection.id, tag)}
+        />
       )}
 
       {leaveConfirmOpen && (

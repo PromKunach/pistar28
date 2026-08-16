@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
   appointmentDateLabel,
+  appointmentDescriptionDisplay,
   appointmentTagLabel,
   fetchSeriesMembersForRecord,
   recordToEditDraft,
@@ -219,9 +220,9 @@ export function AppointmentDetailDialog({
                       {appointmentDateLabel(appointment, seriesMembers)}
                     </p>
                   </div>
-                  {appointment.description ? (
+                  {appointmentDescriptionDisplay(appointment.description) ? (
                     <p className="text-sm leading-relaxed text-slate-600 dark:text-neutral-400">
-                      {appointment.description}
+                      {appointmentDescriptionDisplay(appointment.description)}
                     </p>
                   ) : (
                     <p className="text-sm text-slate-400 dark:text-neutral-500">ไม่มีคำอธิบาย</p>

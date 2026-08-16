@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -33,8 +32,8 @@ function MemberListSkeleton() {
   return (
     <div className="space-y-2">
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-        <div key={i} className="flex animate-pulse items-center gap-3 rounded-xl border border-slate-200 px-4 py-3">
-          <div className="h-12 w-12 shrink-0 rounded-full bg-slate-200" />
+        <div key={i} className="flex animate-pulse items-center gap-3.5 rounded-full border border-slate-200 px-4 py-3.5 sm:px-5 sm:py-4">
+          <div className="h-14 w-14 shrink-0 rounded-full bg-slate-200 sm:h-16 sm:w-16" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-3/4 rounded bg-slate-200" />
             <div className="h-3 w-1/2 rounded bg-slate-100" />
@@ -70,7 +69,7 @@ function CrossfadeImage({ src, alt }: { src: string; alt: string }) {
   }, [src]);
 
   return (
-    <>
+    <div className="relative h-full w-full">
       {layers.map((layer, i) => {
         const isTop = i === layers.length - 1;
         return (
@@ -82,7 +81,7 @@ function CrossfadeImage({ src, alt }: { src: string; alt: string }) {
           />
         );
       })}
-    </>
+    </div>
   );
 }
 
@@ -120,40 +119,30 @@ function FadeInImage({
 
 function CardFront({ profile }: { profile: Profile }) {
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-slate-900 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-slate-900/10">
-      <CrossfadeImage src={profile.url} alt={profile.full_name_th} />
-
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/5 to-transparent" />
-      <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/20" />
-
-      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3 sm:p-4">
-        <Image
-          src="/logo_img_white.png"
-          alt="PISTAR 28"
-          width={56}
-          height={56}
-          draggable={false}
-          className="h-8 w-auto object-contain sm:h-12"
-        />
-        <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold tracking-normal text-white/90 sm:px-2.5 sm:py-1 sm:text-xs">
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] bg-slate-950 p-3.5 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.55)] ring-1 ring-slate-800 sm:p-5">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl ring-1 ring-white/10">
+        <CrossfadeImage src={profile.url} alt={profile.full_name_th} />
+        <span className="absolute bottom-2 right-2 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-semibold tracking-normal text-white/90 backdrop-blur-sm sm:bottom-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs">
           #{profile.id}
         </span>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5">
+      <div className="mt-3 shrink-0 sm:mt-4">
         <p className="text-base font-semibold leading-snug text-white sm:text-xl">
           {profile.full_name_th}
         </p>
-        <p className="mt-0.5 text-xs text-white/65 sm:text-sm">({profile.nickname_th})</p>
+        <p className="mt-0.5 text-xs text-white/55 sm:text-sm">({profile.nickname_th})</p>
         <Link
           href={`/member/section?section=${encodeURIComponent(profile.section ?? "")}`}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-          className="mt-2 inline-flex rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-[10px] text-white/85 transition-colors hover:border-white/50 hover:bg-white/20 sm:mt-3 sm:px-3 sm:py-1 sm:text-xs"
+          className="mt-2 inline-flex rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[10px] text-white/75 transition-colors hover:border-white/30 hover:bg-white/10 sm:mt-2.5 sm:px-3 sm:py-1 sm:text-xs"
         >
           {profile.section}
         </Link>
       </div>
+
+      <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/10" />
     </div>
   );
 }
@@ -190,7 +179,6 @@ function CardBack({ profile }: { profile: Profile }) {
             </p>
             <p className="truncate text-xs text-white/55">({profile.nickname_th})</p>
             <p className="truncate text-xs text-white/55">({profile.pbri_id})</p>
-
           </div>
         </div>
       </div>
@@ -353,7 +341,7 @@ function AvatarCarousel({
   return (
     <div
       ref={containerRef}
-      className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto py-2"
+      className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto py-3"
       style={{ paddingLeft: edgePadding, paddingRight: edgePadding }}
     >
       {profiles.map((profile) => {
@@ -368,18 +356,16 @@ function AvatarCarousel({
             }}
             type="button"
             onClick={() => onSelect(String(profile.id))}
-            className="flex shrink-0 snap-center flex-col items-center gap-1"
+            className={cn(
+              "flex shrink-0 snap-center items-center rounded-full border-2 p-1.5 transition-colors sm:p-2",
+              isSelected
+                ? "border-slate-500 bg-slate-200 shadow-md"
+                : "border-transparent bg-white hover:bg-slate-50"
+            )}
             style={{ transformOrigin: "center" }}
             aria-label={profile.full_name_th}
           >
-            <div
-              className={cn(
-                "relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 transition-colors sm:h-16 sm:w-16",
-                isSelected
-                  ? "border-slate-900 ring-2 ring-slate-200"
-                  : "border-slate-200 hover:border-slate-400"
-              )}
-            >
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full sm:h-16 sm:w-16">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={profile.url}
@@ -416,7 +402,7 @@ function MemberList({
     if (!viewport) return;
 
     const firstItem = itemRefs.current.values().next().value as HTMLButtonElement | undefined;
-    const itemHeight = firstItem?.getBoundingClientRect().height ?? 76;
+    const itemHeight = firstItem?.getBoundingClientRect().height ?? 88;
 
     function updatePadding() {
       if (!viewport) return;
@@ -476,13 +462,13 @@ function MemberList({
             onClick={() => onSelect(String(profile.id))}
             style={{ transformOrigin: "center" }}
             className={cn(
-              "transition-transform duration-200 ease-out flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-md ",
+              "flex w-full items-center gap-3.5 rounded-full border-2 px-4 py-3.5 text-left shadow-md transition-all duration-200 ease-out sm:gap-4 sm:px-5 sm:py-4",
               isSelected
-                ? "border-neutral-200 bg-slate-50 shadow-xl ring-1 ring-slate-500"
-                : "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50"
+                ? "border-slate-400 bg-slate-100 shadow-lg"
+                : "border-transparent bg-white hover:bg-slate-50"
             )}
           >
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md border border-slate-200">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-slate-200 sm:h-16 sm:w-16">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={profile.url}
@@ -493,8 +479,12 @@ function MemberList({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-[1.5rem] text-slate-900">{profile.full_name_th}</p>
-              <p className="truncate text-md text-slate-500">{profile.nickname_th}</p>
+              <p className="truncate font-medium text-base text-slate-900 sm:text-lg">
+                {profile.full_name_th}
+              </p>
+              <p className="truncate text-sm text-slate-500">
+                {profile.nickname_th}
+              </p>
             </div>
           </button>
         );

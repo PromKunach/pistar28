@@ -64,8 +64,8 @@ export function recordToEditDraft(
   const endDate = dates[dates.length - 1] ?? startDate
 
   return {
-    title: record.title,
-    description: record.description,
+    title: parseBoardSourceFromText(record.title).body,
+    description: parseBoardSourceFromText(record.description).body,
     isRange: seriesMembers.length > 1,
     startDate,
     endDate,
@@ -158,10 +158,55 @@ function buildAppointmentPayload(draft: {
   }
 }
 
-async function fetchAppointmentById(id: string) {
+const BOARD_SOURCE_PATTERN = /\s*\(มาจากบอร์ด:\s*(.+?)\)\s*$/
+
+export function parseBoardSourceFromText(text: string) {
+  const match = text.match(BOARD_SOURCE_PATTERN)
+  if (!match) return { body: text, boardLabel: null }
+
+  const body = text.slice(0, match.index ?? 0).trimEnd()
+  return { body, boardLabel: match[1].trim() }
+}
+
+export function appendBoardSourceToText(text: string, boardLabel: string) {
+  const { body } = parseBoardSourceFromText(text)
+  const label = boardLabel.trim() || "บอร์ด"
+  const suffix = `(มาจากบอร์ด: ${label})`
+  const trimmed = body.trim()
+  if (!trimmed) return suffix
+  return `${trimmed} ${suffix}`
+}
+
+/** @deprecated use parseBoardSourceFromText */
+export const parseBoardSourceFromDescription = parseBoardSourceFromText
+
+/** @deprecated use appendBoardSourceToText */
+export const appendBoardSourceToDescription = appendBoardSourceToText
+
+export function appointmentDescriptionDisplay(description: string) {
+  const trimmed = description.trim()
+  return trimmed || null
+}
+
+function boardSourceLabelFromRecord(record: Pick<AppointmentRecord, "title" | "description">) {
+  return (
+    parseBoardSourceFromText(record.title).boardLabel ??
+    parseBoardSourceFromText(record.description).boardLabel
+  )
+}
+
+export async function fetchAppointmentById(id: string) {
   const { data, error } = await supabase.from("appointments").select("*").eq("id", id).single()
   if (error) throw error
   return data as AppointmentRecord
+}
+
+export async function fetchAppointmentsByIds(ids: string[]): Promise<AppointmentRecord[]> {
+  if (ids.length === 0) return []
+
+  const { data, error } = await supabase.from("appointments").select("*").in("id", ids)
+  if (error) throw error
+  return (data ?? []) as AppointmentRecord[]
 }
 
 async function fetchSeriesMembersFromDb(record: AppointmentRecord) {
@@ -305,7 +350,12 @@ export async function updateAppointment(
 ): Promise<AppointmentRecord[]> {
   const current = await fetchAppointmentById(id)
   const seriesMembers = await fetchSeriesMembersFromDb(current)
+  const boardSourceLabel = boardSourceLabelFromRecord(current)
   const payload = buildAppointmentPayload(draft)
+  if (boardSourceLabel) {
+    payload.title = appendBoardSourceToText(draft.title, boardSourceLabel)
+    payload.description = appendBoardSourceToText(draft.description, boardSourceLabel)
+  }
 
   if (!draft.isRange) {
     const targetDate = toScheduledDate(draft.startDate)

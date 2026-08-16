@@ -7,6 +7,69 @@ export type ImageFocus = {
   zoom: number
 }
 
+const DEFAULT_IMAGE_FOCUS: ImageFocus = { x: 50, y: 50, zoom: 1 }
+
+function clampImageFocusValue(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min
+  return Math.min(max, Math.max(min, value))
+}
+
+export function normalizeImageFocus(value: unknown): ImageFocus {
+  if (typeof value === "string") {
+    try {
+      return normalizeImageFocus(JSON.parse(value))
+    } catch {
+      return DEFAULT_IMAGE_FOCUS
+    }
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>
+    if ("x" in record && "y" in record && "zoom" in record) {
+      return {
+        x: clampImageFocusValue(Number(record.x), 0, 100),
+        y: clampImageFocusValue(Number(record.y), 0, 100),
+        zoom: clampImageFocusValue(Number(record.zoom), 1, 3),
+      }
+    }
+  }
+
+  return DEFAULT_IMAGE_FOCUS
+}
+
+function isPostgrestSingleRowError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const code = "code" in error ? String((error as { code: string }).code) : ""
+  const message = "message" in error ? String((error as { message: string }).message) : ""
+  return (
+    code === "PGRST116" ||
+    message.includes("0 rows") ||
+    message.includes("single JSON")
+  )
+}
+
+export function announcementMutationErrorMessage(error: unknown) {
+  if (isPostgrestSingleRowError(error)) {
+    return "บันทึกไม่สำเร็จ — คุณไม่มีสิทธิ์แก้ไขโน้ตนี้ หรือโน้ตถูกลบแล้ว"
+  }
+
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message: string }).message)
+    if (message.includes("announcements") && message.includes("does not exist")) {
+      return "ไม่พบตาราง announcements กรุณารัน supabase/announcements.sql ก่อน"
+    }
+    if (message.includes("row-level security") || message.includes("permission denied")) {
+      return "ไม่มีสิทธิ์บันทึก ตรวจสอบนโยบาย RLS ใน Supabase"
+    }
+    if (message.includes("Bucket not found") || message.includes("storage")) {
+      return "อัปโหลดรูปไม่สำเร็จ ตรวจสอบ bucket images และนโยบาย storage"
+    }
+    return message
+  }
+
+  return "บันทึกโน้ตประกาศไม่ได้ กรุณาลองใหม่อีกครั้ง"
+}
+
 export type AnnouncementRecord = {
   id: string
   author_pbri_id: string
@@ -88,7 +151,7 @@ export async function createAnnouncement(
       icon_id: input.iconId,
       text_color: input.textColor,
       card_color: input.cardColor,
-      image_focus: input.imageFocus,
+      image_focus: normalizeImageFocus(input.imageFocus),
       image_storage_path: storagePath,
       image_file_name: input.imageName,
       image_mime_type: input.imageBlob ? "image/webp" : null,
@@ -96,13 +159,17 @@ export async function createAnnouncement(
       image_original_size_bytes: input.imageMeta?.originalSize ?? null,
     })
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     if (storagePath) {
       await supabase.storage.from("images").remove([storagePath])
     }
     throw error
+  }
+
+  if (!data) {
+    throw new Error("บันทึกโน้ตประกาศไม่สำเร็จ")
   }
 
   return data as AnnouncementRecord
@@ -122,34 +189,42 @@ export async function updateAnnouncement(
 
   const imageChanged = Boolean(input.imageBlob) || input.imageRemoved
 
+  const updatePayload: Record<string, unknown> = {
+    name: input.name,
+    description: input.description,
+    icon_id: input.iconId,
+    text_color: input.textColor,
+    card_color: input.cardColor,
+    image_focus: normalizeImageFocus(input.imageFocus),
+  }
+
+  if (imageChanged) {
+    updatePayload.image_storage_path = nextStoragePath
+    updatePayload.image_file_name = input.imageBlob ? input.imageName : null
+    updatePayload.image_mime_type = input.imageBlob ? "image/webp" : null
+    updatePayload.image_size_bytes = input.imageMeta?.compressedSize ?? null
+    updatePayload.image_original_size_bytes = input.imageMeta?.originalSize ?? null
+  }
+
   const { data, error } = await supabase
     .from("announcements")
-    .update({
-      name: input.name,
-      description: input.description,
-      icon_id: input.iconId,
-      text_color: input.textColor,
-      card_color: input.cardColor,
-      image_focus: input.imageFocus,
-      ...(imageChanged
-        ? {
-            image_storage_path: nextStoragePath,
-            image_file_name: input.imageBlob ? input.imageName : null,
-            image_mime_type: input.imageBlob ? "image/webp" : null,
-            image_size_bytes: input.imageMeta?.compressedSize ?? null,
-            image_original_size_bytes: input.imageMeta?.originalSize ?? null,
-          }
-        : null),
-    })
+    .update(updatePayload)
     .eq("id", input.id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     if (nextStoragePath) {
       await supabase.storage.from("images").remove([nextStoragePath])
     }
     throw error
+  }
+
+  if (!data) {
+    if (nextStoragePath) {
+      await supabase.storage.from("images").remove([nextStoragePath])
+    }
+    throw new Error("บันทึกไม่สำเร็จ — คุณไม่มีสิทธิ์แก้ไขโน้ตนี้ หรือโน้ตถูกลบแล้ว")
   }
 
   if (imageChanged && input.previousStoragePath) {

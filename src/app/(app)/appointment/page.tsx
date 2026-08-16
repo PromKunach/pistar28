@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react"
 
 import { AddAppointmentDialog } from "@/app/(app)/appointment/AddAppointmentDialog"
 import { AppointmentDetailDialog } from "@/app/(app)/appointment/AppointmentDetailDialog"
+import { PaperDateCard } from "@/app/(app)/appointment/PaperDateCard"
 import {
   EMPTY_APPOINTMENT_FILTER,
   filterAppointments,
@@ -14,15 +15,14 @@ import {
 } from "@/app/(app)/appointment/appointment-filter"
 import { AppointmentFilterPopover } from "@/app/(app)/appointment/AppointmentFilterPopover"
 import {
-  buildDateCardTheme,
   colorWithOpacity,
   getAppointmentAccentColor,
-  useIsDarkMode,
 } from "@/app/(app)/appointment/appointment-ui"
 import { Button } from "@/components/ui/button"
 import {
   appointmentLoadErrorMessage,
   appointmentSaveErrorMessage,
+  appointmentDescriptionDisplay,
   createAppointmentsFromDraft,
   deleteAppointment,
   fetchAppointmentsForMonth,
@@ -49,130 +49,6 @@ function appointmentAccentStyle(item: AppointmentRecord, opacity = 1) {
   return { backgroundColor: colorWithOpacity(color, opacity) }
 }
 
-const FRAME_TRANSITION = { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const }
-
-function PaperDateCardContent({
-  date,
-  themed,
-  theme,
-  isSameMonth,
-  monthYearLabel,
-  weekdayLabel,
-}: {
-  date: Date
-  themed: boolean
-  theme: ReturnType<typeof buildDateCardTheme> | null
-  isSameMonth: boolean
-  monthYearLabel: string
-  weekdayLabel: string
-}) {
-  if (isSameMonth) {
-    return (
-      <div className="flex min-h-[14.5rem] flex-col items-center justify-center px-8 py-10 text-center">
-        {themed && theme ? (
-          <motion.p
-            animate={{ color: theme.monthText }}
-            transition={THEME_TRANSITION}
-            className="text-xl font-medium"
-          >
-            {monthYearLabel}
-          </motion.p>
-        ) : (
-          <p className="text-xl font-medium text-slate-600 dark:text-neutral-400">
-            {monthYearLabel}
-          </p>
-        )}
-        <div className="mt-2 flex h-[5.5rem] items-center justify-center overflow-hidden">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.p
-              key={date.getDate()}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{
-                opacity: 1,
-                y: 0,
-                ...(themed && theme ? { color: theme.dayText } : {}),
-              }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={FRAME_TRANSITION}
-              className={cn(
-                "text-7xl font-semibold tracking-tight",
-                !themed && "text-slate-900 dark:text-neutral-100"
-              )}
-            >
-              {date.getDate()}
-            </motion.p>
-          </AnimatePresence>
-        </div>
-        {themed && theme ? (
-          <motion.p
-            animate={{ color: theme.weekdayText }}
-            transition={THEME_TRANSITION}
-            className="mt-3 text-base"
-          >
-            {weekdayLabel}
-          </motion.p>
-        ) : (
-          <p className="mt-3 text-base text-slate-500 dark:text-neutral-500">
-            {weekdayLabel}
-          </p>
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={dateKey(date)}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -12 }}
-        transition={FRAME_TRANSITION}
-        className="flex min-h-[14.5rem] flex-col items-center justify-center px-8 py-10 text-center"
-      >
-        {themed && theme ? (
-          <motion.p
-            animate={{ color: theme.monthText }}
-            transition={THEME_TRANSITION}
-            className="text-xl font-medium"
-          >
-            {monthYearLabel}
-          </motion.p>
-        ) : (
-          <p className="text-xl font-medium text-slate-600 dark:text-neutral-400">
-            {monthYearLabel}
-          </p>
-        )}
-        {themed && theme ? (
-          <motion.p
-            animate={{ color: theme.dayText }}
-            transition={THEME_TRANSITION}
-            className="mt-2 text-7xl font-semibold tracking-tight"
-          >
-            {date.getDate()}
-          </motion.p>
-        ) : (
-          <p className="mt-2 text-7xl font-semibold tracking-tight text-slate-900 dark:text-neutral-100">
-            {date.getDate()}
-          </p>
-        )}
-        {themed && theme ? (
-          <motion.p
-            animate={{ color: theme.weekdayText }}
-            transition={THEME_TRANSITION}
-            className="mt-3 text-base"
-          >
-            {weekdayLabel}
-          </motion.p>
-        ) : (
-          <p className="mt-3 text-base text-slate-500 dark:text-neutral-500">
-            {weekdayLabel}
-          </p>
-        )}
-      </motion.div>
-    </AnimatePresence>
-  )
-}
 
 function dateKey(date: Date) {
   const year = date.getFullYear()
@@ -304,133 +180,6 @@ function YearDropdown({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  )
-}
-
-function PaperDateCard({
-  date,
-  accentColor,
-}: {
-  date: Date
-  accentColor?: string | null
-}) {
-  const isDark = useIsDarkMode()
-  const themed = Boolean(accentColor)
-  const theme = useMemo(
-    () => (accentColor ? buildDateCardTheme(accentColor, isDark) : null),
-    [accentColor, isDark]
-  )
-  const stackLayers = themed
-    ? [
-        { width: "w-[90%]", backgroundColor: theme!.stack1 },
-        { width: "w-[76%]", backgroundColor: theme!.stack2 },
-      ]
-    : [
-        { width: "w-[90%]", className: "bg-slate-100 dark:bg-neutral-900/80" },
-        { width: "w-[76%]", className: "bg-slate-50 dark:bg-neutral-950" },
-      ]
-  const prevDateRef = useRef(date)
-  const isSameMonth =
-    prevDateRef.current.getFullYear() === date.getFullYear() &&
-    prevDateRef.current.getMonth() === date.getMonth()
-  const monthYearLabel = date.toLocaleDateString("th-TH", {
-    month: "long",
-    year: "numeric",
-  })
-  const weekdayLabel = date.toLocaleDateString("th-TH", { weekday: "long" })
-
-  useEffect(() => {
-    prevDateRef.current = date
-  }, [date])
-
-  return (
-    <div className="flex w-full flex-col items-center">
-      <div className="relative w-full pt-3">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-2 inset-x-0 z-10 h-14"
-        >
-          {themed ? (
-            <>
-              <motion.span
-                animate={{
-                  backgroundColor: theme!.ringBackground,
-                  borderColor: theme!.ringBorder,
-                }}
-                transition={THEME_TRANSITION}
-                className="absolute top-0 left-[20%] h-14 w-2.5 -translate-x-1/2 rounded-[5px] border"
-              />
-              <motion.span
-                animate={{
-                  backgroundColor: theme!.ringBackground,
-                  borderColor: theme!.ringBorder,
-                }}
-                transition={THEME_TRANSITION}
-                className="absolute top-0 left-[80%] h-14 w-2.5 -translate-x-1/2 rounded-[5px] border"
-              />
-            </>
-          ) : (
-            <>
-              <span className="absolute top-0 left-[20%] h-14 w-2.5 -translate-x-1/2 rounded-[5px] border border-slate-300/80 bg-slate-300 dark:border-neutral-600 dark:bg-neutral-700" />
-              <span className="absolute top-0 left-[80%] h-14 w-2.5 -translate-x-1/2 rounded-[5px] border border-slate-300/80 bg-slate-300 dark:border-neutral-600 dark:bg-neutral-700" />
-            </>
-          )}
-        </div>
-
-        {themed && theme ? (
-          <motion.div
-            animate={{
-              backgroundColor: theme.cardBackground,
-              borderColor: theme.cardBorder,
-            }}
-            transition={THEME_TRANSITION}
-            className="w-full overflow-hidden rounded-xl border pt-5 shadow-sm"
-          >
-            <PaperDateCardContent
-              date={date}
-              themed={themed}
-              theme={theme}
-              isSameMonth={isSameMonth}
-              monthYearLabel={monthYearLabel}
-              weekdayLabel={weekdayLabel}
-            />
-          </motion.div>
-        ) : (
-          <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white pt-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-            <PaperDateCardContent
-              date={date}
-              themed={themed}
-              theme={theme}
-              isSameMonth={isSameMonth}
-              monthYearLabel={monthYearLabel}
-              weekdayLabel={weekdayLabel}
-            />
-          </div>
-        )}
-      </div>
-
-      {stackLayers.map((layer, index) =>
-        themed && "backgroundColor" in layer ? (
-          <motion.div
-            key={index}
-            aria-hidden="true"
-            animate={{ backgroundColor: layer.backgroundColor }}
-            transition={THEME_TRANSITION}
-            className={cn("mt-1 h-2 rounded-b-lg rounded-t-none", layer.width)}
-          />
-        ) : (
-          <div
-            key={index}
-            aria-hidden="true"
-            className={cn(
-              "mt-1 h-2 rounded-b-lg rounded-t-none",
-              layer.width,
-              "className" in layer ? layer.className : undefined
-            )}
-          />
-        )
-      )}
     </div>
   )
 }
@@ -712,7 +461,9 @@ export default function AppointmentPage() {
                   กำลังโหลด...
                 </li>
               ) : selectedAppointments.length > 0 ? (
-                selectedAppointments.map((item) => (
+                selectedAppointments.map((item) => {
+                  const description = appointmentDescriptionDisplay(item.description)
+                  return (
                   <li key={item.id}>
                     <button
                       type="button"
@@ -740,16 +491,17 @@ export default function AppointmentPage() {
                         <p className="text-sm font-medium text-slate-900 dark:text-neutral-100">
                           {item.title}
                         </p>
-                        {item.description ? (
+                        {description ? (
                           <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-neutral-400">
-                            {item.description}
+                            {description}
                           </p>
                         ) : null}
                       </div>
                     </div>
                     </button>
                   </li>
-                ))
+                  )
+                })
               ) : (
                 <li className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-500">
                   {filterIsActive

@@ -27,7 +27,13 @@ export type BoardBlockLink = {
   offsetY: number
 }
 
-export type BoardBlockKind = "text" | "counter" | "comment" | "link" | "dock"
+export type BoardBlockKind =
+  | "text"
+  | "counter"
+  | "comment"
+  | "link"
+  | "dock"
+  | "appointment"
 
 export type BoardCounterIncrement = {
   id: string
@@ -96,18 +102,27 @@ export type BoardDockBlock = BoardBlockShared & {
   snapSide: DockSnapSide | null
 }
 
+export type BoardAppointmentBlock = BoardBlockShared & {
+  kind: "appointment"
+}
+
 export type BoardBlock =
   | BoardTextBlock
   | BoardCounterBlock
   | BoardCommentBlock
   | BoardLinkBlock
   | BoardDockBlock
+  | BoardAppointmentBlock
 
 export type BoardConnection = {
   id: string
   fromId: string
   toId: string
   createdAt: string
+  appointmentId?: string | null
+  tone?: "red" | "blue" | "neutral"
+  customTagLabel?: string | null
+  customTagColor?: string | null
 }
 
 export type BoardContent = {
@@ -145,6 +160,7 @@ export const LINK_NODE_SIZE = 52
 /** Layout width for link node connection anchors and drag bounds. */
 export const LINK_NODE_LAYOUT_WIDTH = 224 / BOARD_WIDTH
 export const DEFAULT_LINK_WIDTH = LINK_NODE_LAYOUT_WIDTH
+export const DEFAULT_APPOINTMENT_WIDTH = 200 / BOARD_WIDTH
 
 /** Max encoded image size stored on a comment (512 KB). */
 export const COMMENT_IMAGE_MAX_BYTES = 512 * 1024
@@ -170,6 +186,10 @@ export function isLinkBlock(block: BoardBlock): block is BoardLinkBlock {
 
 export function isDockBlock(block: BoardBlock): block is BoardDockBlock {
   return block.kind === "dock"
+}
+
+export function isAppointmentBlock(block: BoardBlock): block is BoardAppointmentBlock {
+  return block.kind === "appointment"
 }
 
 /** "all" = any logged-in user; "author" = only the block author */
@@ -285,6 +305,22 @@ export function createDockBlock(
   }
 }
 
+export function createAppointmentBlock(
+  x: number,
+  y: number,
+  author: BoardAuthor
+): BoardAppointmentBlock {
+  return {
+    id: crypto.randomUUID(),
+    kind: "appointment",
+    x,
+    y,
+    width: DEFAULT_APPOINTMENT_WIDTH,
+    author,
+    createdAt: new Date().toISOString(),
+  }
+}
+
 function isBlockLink(value: unknown): value is BoardBlockLink {
   if (!value || typeof value !== "object") return false
   const link = value as Record<string, unknown>
@@ -346,6 +382,9 @@ function isBlock(value: unknown): value is BoardBlock {
     return true
   }
   if (block.kind === "dock") {
+    return true
+  }
+  if (block.kind === "appointment") {
     return true
   }
   return typeof block.text === "string"
@@ -561,6 +600,21 @@ function legacyTextLinksToLinkBlocks(
   })
 }
 
+function normalizeAppointmentBlock(block: BoardAppointmentBlock): BoardAppointmentBlock {
+  return {
+    id: block.id,
+    kind: "appointment",
+    x: block.x,
+    y: block.y,
+    width: DEFAULT_APPOINTMENT_WIDTH,
+    author: block.author ?? {
+      studentId: "ไม่ระบุ",
+      displayName: "ไม่ทราบชื่อ",
+    },
+    createdAt: block.createdAt || new Date().toISOString(),
+  }
+}
+
 function normalizeDockBlock(block: BoardDockBlock): BoardDockBlock {
   const raw = block as BoardDockBlock & Record<string, unknown>
   const dockedBlockIds = Array.isArray(raw.dockedBlockIds)
@@ -616,6 +670,7 @@ export function normalizeBoardBlocksForSave(blocks: BoardBlock[]): BoardBlock[] 
     if (isCommentBlock(block)) return { ...block, width: DEFAULT_COMMENT_WIDTH }
     if (isLinkBlock(block)) return { ...block, width: DEFAULT_LINK_WIDTH }
     if (isDockBlock(block)) return { ...block, width: DEFAULT_DOCK_WIDTH }
+    if (isAppointmentBlock(block)) return { ...block, width: DEFAULT_APPOINTMENT_WIDTH }
     return block
   })
 }
@@ -662,6 +717,13 @@ export function normalizeBlocks(raw: unknown): BoardBlock[] {
       result.push(normalized)
       continue
     }
+    if (isAppointmentBlock(item)) {
+      const normalized = normalizeAppointmentBlock(item)
+      if (seenBlockIds.has(normalized.id)) continue
+      seenBlockIds.add(normalized.id)
+      result.push(normalized)
+      continue
+    }
 
     const textBlock = normalizeTextBlock(item)
     result.push(textBlock)
@@ -685,10 +747,28 @@ export function normalizeBlocks(raw: unknown): BoardBlock[] {
 
 export function normalizeConnections(raw: unknown): BoardConnection[] {
   if (!Array.isArray(raw)) return []
-  return raw.filter(isConnection).map((connection) => ({
-    ...connection,
-    createdAt: connection.createdAt || new Date().toISOString(),
-  }))
+  return raw.filter(isConnection).map((connection) => {
+    const extra = connection as BoardConnection & Record<string, unknown>
+    const tone = extra.tone
+    const normalizedTone =
+      tone === "red" || tone === "blue" || tone === "neutral" ? tone : "neutral"
+
+    return {
+      id: connection.id,
+      fromId: connection.fromId,
+      toId: connection.toId,
+      createdAt: connection.createdAt || new Date().toISOString(),
+      appointmentId:
+        typeof extra.appointmentId === "string" ? extra.appointmentId : null,
+      tone: normalizedTone,
+      customTagLabel:
+        typeof extra.customTagLabel === "string" ? extra.customTagLabel : null,
+      customTagColor:
+        typeof extra.customTagLabel === "string" && typeof extra.customTagColor === "string"
+          ? extra.customTagColor
+          : null,
+    }
+  })
 }
 
 export function recordToBoardContent(record: AnnouncementBoardRecord): BoardContent {
@@ -754,9 +834,12 @@ export async function updateBoard(
     })
     .eq("announcement_id", input.announcementId)
     .select("announcement_id, blocks, connections, updated_at")
-    .single()
+    .maybeSingle()
 
   if (error) throw error
+  if (!data) {
+    throw new Error("บันทึกบอร์ดไม่สำเร็จ — ไม่พบบอร์ดของประกาศนี้")
+  }
 
   return {
     announcement_id: data.announcement_id,
