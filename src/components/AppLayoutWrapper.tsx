@@ -4,7 +4,7 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import { cn } from "@/lib/utils";
-const NO_LAYOUT_ROUTES = ["/login", "/onboarding"];
+const NO_LAYOUT_ROUTES = ["/login", "/onboarding", "/profile"];
 export default function AppLayoutWrapper({
   children,
 }: {

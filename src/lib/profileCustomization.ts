@@ -119,10 +119,11 @@ export function normalizeCustomization(raw: unknown): ProfileCustomization {
 
   const privacyRaw = o.privacy_settings;
   const privacy_settings: PrivacySettings = {
-    show_email:
+    show_email: Boolean(
       privacyRaw &&
-      typeof privacyRaw === "object" &&
-      (privacyRaw as Record<string, unknown>).show_email === true,
+        typeof privacyRaw === "object" &&
+        (privacyRaw as Record<string, unknown>).show_email === true
+    ),
   };
 
   return {
