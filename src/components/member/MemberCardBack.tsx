@@ -22,10 +22,11 @@ export function MemberCardBack({
   return (
     <div
       ref={cardRef}
-      className="relative flex h-full w-full flex-col overflow-visible rounded-[1.75rem] shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-black/10"
+      className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-black/10 [backface-visibility:hidden] [-webkit-backface-visibility:hidden]"
       style={{
         backgroundColor: customization.card_color,
         color: customization.card_text_color,
+        transform: "translateZ(0.01px)",
       }}
     >
       <div

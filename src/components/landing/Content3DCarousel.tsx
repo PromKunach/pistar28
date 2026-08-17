@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -26,7 +26,16 @@ export function Content3DCarousel({
   slides,
 }: Content3DCarouselProps) {
   const [active, setActive] = useState(0);
+  const [slideOffset, setSlideOffset] = useState(140);
   const count = slides.length;
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setSlideOffset(mq.matches ? 100 : 140);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const goTo = (index: number) => {
     if (count === 0) return;
@@ -41,7 +50,7 @@ export function Content3DCarousel({
   const activeSlide = slides[active];
 
   return (
-    <section className="mx-auto mt-24 max-w-6xl overflow-x-hidden px-6">
+    <section className="mx-auto mt-14 w-full min-w-0 max-w-6xl overflow-x-hidden px-4 sm:mt-20 sm:px-6 md:mt-24">
       <BlurFade inView>
         <div className="mb-10 text-center">
           <h2 className="text-2xl font-medium tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-100">
@@ -60,7 +69,7 @@ export function Content3DCarousel({
           type="button"
           onClick={prev}
           aria-label="ก่อนหน้า"
-          className="absolute top-1/2 left-0 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className="absolute top-1/2 left-1 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 sm:left-0 sm:h-10 sm:w-10"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -69,13 +78,13 @@ export function Content3DCarousel({
           type="button"
           onClick={next}
           aria-label="ถัดไป"
-          className="absolute top-1/2 right-0 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className="absolute top-1/2 right-1 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 sm:right-0 sm:h-10 sm:w-10"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
 
         <div
-          className="relative mx-auto flex h-[22rem] max-w-4xl items-center justify-center overflow-hidden sm:h-[24rem]"
+          className="relative mx-auto flex h-[18rem] max-w-full items-center justify-center overflow-hidden sm:h-[22rem] md:h-[24rem]"
           style={{ perspective: "1200px" }}
         >
           <div className="relative h-full w-full" style={{ transformStyle: "preserve-3d" }}>
@@ -91,7 +100,7 @@ export function Content3DCarousel({
                   onClick={() => goTo(index)}
                   initial={false}
                   animate={{
-                    x: offset * 140,
+                    x: offset * slideOffset,
                     rotateY: offset * -38,
                     scale: offset === 0 ? 1 : 0.82,
                     opacity: isHidden ? 0 : offset === 0 ? 1 : 0.55,

@@ -170,6 +170,7 @@ export function DiaTextReveal({
 
   const [activeIndex, setActiveIndex] = useState(0)
   const [measuredWidths, setMeasuredWidths] = useState<number[]>([])
+  const [containerWidth, setContainerWidth] = useState<number | undefined>()
 
   const sweepPos = useMotionValue(SWEEP_START)
 
@@ -184,6 +185,16 @@ export function DiaTextReveal({
     if (!el || !isMulti) return
     setMeasuredWidths(measureWidths(el, texts))
   }, [Array.isArray(text) ? text.join("\0") : text])
+
+  useEffect(() => {
+    const el = spanRef.current?.parentElement
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   playRef.current = () => {
     const { duration, delay, repeat, repeatDelay, texts } = optsRef.current
@@ -234,6 +245,11 @@ export function DiaTextReveal({
       ? measuredWidths[activeIndex]
       : undefined
 
+  const cappedFixedW =
+    fixedW != null && containerWidth != null
+      ? Math.min(fixedW, containerWidth)
+      : fixedW
+
   return (
     <motion.span
       ref={spanRef}
@@ -250,7 +266,7 @@ export function DiaTextReveal({
           overflow: "hidden",
           whiteSpace: "nowrap",
           verticalAlign: "text-center",
-          ...(fixedW != null && { width: fixedW }),
+          ...(fixedW != null && { width: cappedFixedW }),
         }),
       }}
       animate={animatedW != null ? { width: animatedW } : undefined}

@@ -11,7 +11,7 @@ import { ContentIntroBand } from "@/components/landing/ContentIntroBand";
 import { ContentFeatureSection } from "@/components/landing/ContentFeatureSection";
 import { Content3DCarousel } from "@/components/landing/Content3DCarousel";
 import { HeroStats } from "@/components/landing/HeroStats";
-import { getDaysSinceSemesterOpen } from "@/components/landing/hero-stats-utils";
+import { getCountdownParts, getDaysSinceSemesterOpen } from "@/components/landing/hero-stats-utils";
 // Generates pfp_1.JPG ... pfp_32.JPG public URLs from the "images" bucket, "pfp/" folder
 const PFP_COUNT = 32;
 const pfpImages = Array.from({ length: PFP_COUNT }, (_, i) => {
@@ -33,16 +33,12 @@ export default async function DashboardPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-10xl overflow-x-hidden py-10 sm:py-16">
-      
-      {/* Onboarding pill */}
-     
-
+    <div className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden py-6 sm:py-10 md:py-16">
       {/* Hero */}
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 sm:pb-20">
-        <div className="relative mx-auto flex w-full flex-col  justify-center">
+      <section className="mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 sm:pb-16 md:pb-20">
+        <div className="relative mx-auto flex w-full min-w-0 flex-col justify-center">
         <DottedGlowBackground
-        className="pointer-events-none mask-radial-to-50%  mask-radial-at-center opacity-20 dark:opacity-100"
+        className="pointer-events-none mask-radial-to-50% mask-radial-at-center opacity-20 dark:opacity-100"
         opacity={0.8}
         gap={10}
         radius={5}
@@ -56,28 +52,30 @@ export default async function DashboardPage() {
         speedScale={1}
       />
 
-          <div className="relative z-10 flex w-full flex-col items-center justify-center gap-4 md:flex-row md:items-center md:gap-6">
+          <div className="relative z-10 flex w-full min-w-0 flex-col items-center justify-center gap-3 sm:gap-4 md:flex-row md:items-center md:gap-6">
             <Image
               src="/text_logo.png"
               alt="text-logo"
               loading="eager"
               width={300}
               height={300}
-              className="shrink-0"
+              className="h-auto w-40 max-w-[70vw] shrink-0 sm:w-52 md:w-64 lg:w-72"
             />
 
-            <div className="flex w-full max-w-lg flex-col items-start gap-2 text-left md:w-auto">
-              <h2 className="flex flex-col items-start gap-0.5 text-left text-4xl font-medium leading-tight tracking-tight text-neutral-900 sm:text-5xl dark:text-neutral-400">
+            <div className="flex w-full min-w-0 max-w-lg flex-col items-center gap-1.5 text-center sm:gap-2 md:items-start md:text-left">
+              <h2 className="flex w-full min-w-0 max-w-full flex-col items-center gap-0.5 text-center text-3xl font-medium leading-tight tracking-tight text-neutral-900 sm:text-4xl md:items-start md:text-left lg:text-5xl dark:text-neutral-400">
                 <span>คณะแพทยศาสตร์</span>
-                <DiaTextReveal
-                  className="block font-medium dark:text-white"
-                  repeat
-                  repeatDelay={2}
-                  fixedWidth
-                  text={["สถาบันพระบรมราชชนก", "PIMD30", "PI*28"]}
-                />
+                <span className="block w-full min-w-0 max-w-full overflow-hidden">
+                  <DiaTextReveal
+                    className="block max-w-full font-medium dark:text-white"
+                    repeat
+                    repeatDelay={2}
+                    fixedWidth
+                    text={["สถาบันพระบรมราชชนก", "PIMD30", "PI*28"]}
+                  />
+                </span>
               </h2>
-              <p className="text-left text-xl text-black-600 dark:text-neutral-300">
+              <p className="text-center text-base text-black-600 sm:text-lg md:text-left dark:text-neutral-300">
                 ศูนย์โรงพยาบาลราชบุรี
               </p>
             </div>
@@ -86,6 +84,7 @@ export default async function DashboardPage() {
           <HeroStats
             memberCount={profiles.length}
             daysSinceSemesterOpen={getDaysSinceSemesterOpen()}
+            initialCountdown={getCountdownParts()}
           />
         </div>
       </section>
