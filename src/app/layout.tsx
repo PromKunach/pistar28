@@ -1,4 +1,4 @@
-import { Roboto_Mono, Noto_Sans_Thai, Noto_Sans_Thai_Looped, Itim, Geist } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Thai, Noto_Sans_Thai_Looped, Itim } from "next/font/google";
 import localFont from "next/font/local";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 import { cn } from "@/lib/utils";
@@ -27,10 +27,9 @@ const googleSans = localFont({
   display: "swap",
 });
 
-const robotoMono = Roboto_Mono({
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-roboto-mono",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -66,7 +65,7 @@ export default function RootLayout({
   className={cn(
     geist.variable,
     googleSans.variable,
-    robotoMono.variable,
+    geistMono.variable,
     notoSansThai.variable,
     notoSansThaiLooped.variable,
     itim.variable

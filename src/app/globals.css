@@ -26,7 +26,7 @@
   --font-sans: var(--font-google-sans), var(--font-geist), sans-serif;
   --font-thai-looped: var(--font-noto-sans-th-looped);
   --font-itim: var(--font-itim);
-  --font-mono: var(--font-roboto-mono),var(--font-noto-sans-th), monospace;
+  --font-mono: var(--font-geist-mono), var(--font-noto-sans-th), monospace;
 }
 
 @theme inline {

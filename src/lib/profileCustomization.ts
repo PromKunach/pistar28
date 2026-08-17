@@ -35,6 +35,8 @@ export type ProfileCustomization = {
 
 const HEX_RE = /^#[0-9a-f]{6}$/;
 
+const SELECTOR_SLOTS = new Set<string>(["top", "right", "bottom", "left"]);
+
 export const DEFAULT_CUSTOMIZATION: ProfileCustomization = {
   card_color: "#0f172a",
   card_text_color: "#ffffff",
