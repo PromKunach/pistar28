@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/lib/userProfile";
 import { InertialScrollArea } from "@/components/ui/inertial-scroll";
 import { AvatarSelectorItem } from "@/components/member/AvatarSelectorItem";
+import { MEMBER_CARD_PANEL_BLEED_CLASS } from "@/components/member/cardDimensions";
 import { MemberInspectCard } from "@/components/member/MemberInspectCard";
 import type { MemberProfile } from "@/components/member/types";
 import {
@@ -80,7 +81,7 @@ function MemberDetailPanel({
       : selectedProfile;
 
   return (
-    <div className="flex w-full flex-col items-center justify-center px-4 py-4 sm:px-6 sm:py-8 lg:min-h-full lg:py-12">
+    <div className="flex w-full flex-col items-center justify-center">
       <MemberInspectCard
         resetKey={selectedProfile.id}
         profile={profileWithEmail}
@@ -513,7 +514,9 @@ function MemberPageContent() {
       </section>
 
       <section className="order-1 flex min-h-0 flex-1 flex-col overflow-hidden lg:order-2 lg:flex-none lg:w-[45%] xl:w-[40%]">
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden lg:overflow-y-auto">
+        <div
+          className={`flex min-h-0 flex-1 items-center justify-center overflow-hidden ${MEMBER_CARD_PANEL_BLEED_CLASS}`}
+        >
           {selectedId ? (
             <MemberDetailPanel
               profiles={profiles}

@@ -270,7 +270,7 @@ export function InspectCard({
 function Face({ children, flipped }: { children: ReactNode; flipped?: boolean }) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden rounded-[1.75rem] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]"
+      className="absolute inset-0 overflow-visible rounded-[1.75rem] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]"
       style={{
         transformStyle: "preserve-3d",
         transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",

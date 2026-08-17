@@ -12,6 +12,10 @@ export const STICKER_BASE_PX = 56;
 export const STICKER_BASE_CARD_WIDTH_RATIO =
   STICKER_BASE_PX / MEMBER_CARD_REFERENCE_WIDTH_PX;
 
+/** Extra inset for card panel wrappers so stickers/shadow can bleed without scrollbars. */
+export const MEMBER_CARD_PANEL_BLEED_CLASS =
+  "px-8 py-10 sm:px-12 sm:py-14 lg:px-14 lg:py-16";
+
 export function getStickerWidthPercent(scale: number) {
   return scale * STICKER_BASE_CARD_WIDTH_RATIO * 100;
 }

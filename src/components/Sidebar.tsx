@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Search,
   ChevronDown,
   Home,
   Wrench,
@@ -21,6 +20,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ContactPanel } from "@/components/ContactPanel";
 import { AboutPanel } from "@/components/AboutPanel";
+import { SidebarSearch } from "@/components/SidebarSearch";
 
 // ---------------------------------------------
 // Config — edit this to reshape the nav
@@ -245,21 +245,11 @@ export default function Sidebar({
         </div>
 
         {/* Quick search */}
-        <div className="px-3 pt-3">
-          <button
-            className={`flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400 hover:bg-slate-100 ${
-              desktopCollapsed ? "lg:justify-center" : ""
-            }`}
-          >
-            <Search className="h-4 w-4 shrink-0" />
-            <span className={`flex-1 text-left ${labelClass}`}>ค้นหา...</span>
-            <kbd
-              className={`rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 ${labelClass}`}
-            >
-              Ctrl K
-            </kbd>
-          </button>
-        </div>
+        <SidebarSearch
+          desktopCollapsed={desktopCollapsed}
+          labelClass={labelClass}
+          onCloseMobile={onCloseMobile}
+        />
 
         {/* Nav sections */}
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 font-sans no-scrollbar">
