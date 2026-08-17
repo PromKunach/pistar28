@@ -619,6 +619,7 @@ function SectionPageContent() {
 
       {/* Main content + mobile controls */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 sm:px-4">
             <div className="relative flex h-full min-h-[min(72dvh,520px)] w-full max-w-3xl flex-col items-center justify-center overflow-hidden sm:min-h-[min(68dvh,560px)] lg:min-h-[420px] lg:max-w-none">

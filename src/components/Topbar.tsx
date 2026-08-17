@@ -308,7 +308,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
                     เครื่องมือ
                   </MenuItem>
                   <MenuItem
-                    href="#"
+                    href="/profile"
                     icon={Settings}
                     onClick={() => setMenuOpen(false)}
                   >

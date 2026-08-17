@@ -27,7 +27,6 @@ export default function AppLayoutWrapper({
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenSidebar={() => setMobileOpen(true)} />
         <main
-          data-app-scroll
           className={cn(
             "flex-1 overflow-y-auto",
             pathname === "/appointment" && "no-scrollbar"

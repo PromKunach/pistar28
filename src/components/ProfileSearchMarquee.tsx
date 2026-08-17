@@ -13,7 +13,13 @@ type Profile = {
   nickname_th: string;
 };
 
-export default function ProfileSearchMarquee({ profiles }: { profiles: Profile[] }) {
+export default function ProfileSearchMarquee({
+  profiles,
+  visible = true,
+}: {
+  profiles: Profile[];
+  visible?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const q = query.toLowerCase();
 
@@ -38,8 +44,8 @@ export default function ProfileSearchMarquee({ profiles }: { profiles: Profile[]
   );
 
   return (
-    <>
-      <div className="mb-12 mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <div className={visible ? undefined : "hidden"} aria-hidden={!visible}>
+      <div className="mx-auto mt-8 mb-12 flex max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
         <Search className="h-4 w-4 shrink-0 text-slate-400" />
         <input
           type="text"
@@ -57,6 +63,6 @@ export default function ProfileSearchMarquee({ profiles }: { profiles: Profile[]
           {filtered.map(avatar)}
         </div>
       )}
-    </>
+    </div>
   );
 }

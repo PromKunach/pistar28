@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   AnimatePresence,
   motion,
@@ -45,7 +45,25 @@ export function BlurFade({
   ...props
 }: BlurFadeProps) {
   const ref = useRef(null)
-  const inViewResult = useInView(ref, { once: true, margin: inViewMargin })
+  const [scrollRoot, setScrollRoot] = useState<Element | null>(null)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const main = document.querySelector("main.overflow-y-auto")
+    if (main) setScrollRoot(main)
+
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const updateMotion = () => setReducedMotion(mq.matches)
+    updateMotion()
+    mq.addEventListener("change", updateMotion)
+    return () => mq.removeEventListener("change", updateMotion)
+  }, [])
+
+  const inViewResult = useInView(ref, {
+    once: false,
+    margin: inViewMargin,
+    ...(scrollRoot ? { root: scrollRoot } : {}),
+  })
   const isInView = !inView || inViewResult
   const defaultVariants: Variants = {
     hidden: {
@@ -62,8 +80,16 @@ export function BlurFade({
   }
   const combinedVariants = variant ?? defaultVariants
 
-  const hiddenFilter = getFilter(combinedVariants.hidden)
-  const visibleFilter = getFilter(combinedVariants.visible)
+  const motionVariants: Variants =
+    reducedMotion && !variant
+      ? {
+          hidden: { opacity: 0 },
+          visible: { opacity: 1 },
+        }
+      : combinedVariants
+
+  const hiddenFilter = getFilter(motionVariants.hidden)
+  const visibleFilter = getFilter(motionVariants.visible)
 
   const shouldTransitionFilter =
     hiddenFilter != null &&
@@ -77,7 +103,7 @@ export function BlurFade({
         initial="hidden"
         animate={isInView ? "visible" : "hidden"}
         exit="hidden"
-        variants={combinedVariants}
+        variants={motionVariants}
         transition={{
           delay: 0.04 + delay,
           duration,

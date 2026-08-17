@@ -4,24 +4,41 @@ import { parseSheetRows, type FileNode } from "@/lib/fileTree"
 
 function parseServiceAccountJson(raw: string) {
   const trimmed = raw.trim()
-  if (!trimmed) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is empty")
-  try {
-    return JSON.parse(trimmed) as {
-      client_email: string
-      private_key: string
+  if (!trimmed) throw new Error("FILES_CONFIG_ERROR")
+
+  const candidates = [trimmed]
+  if (!trimmed.startsWith("{")) {
+    try {
+      candidates.push(Buffer.from(trimmed, "base64").toString("utf8"))
+    } catch {
+      // not base64 — fall through to JSON parse error
     }
-  } catch {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is invalid JSON")
   }
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate) as {
+        client_email: string
+        private_key: string
+      }
+    } catch {
+      continue
+    }
+  }
+
+  throw new Error("FILES_CONFIG_ERROR")
 }
 
 export function getGoogleSheetsConfig() {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_ID?.trim() ?? ""
-  const sheetTab = process.env.FILES_SHEET_TAB?.trim() || "files"
+  const spreadsheetId =
+    process.env.GOOGLE_SHEETS_ID?.trim() ||
+    process.env.GOOGLE_SHEET_ID?.trim() ||
+    ""
+  const sheetTab = process.env.FILES_SHEET_TAB?.trim() || "Sheet1"
   const cacheTtlSeconds = Number(process.env.FILES_CACHE_TTL_SECONDS ?? "180")
 
   if (!spreadsheetId) {
-    throw new Error("GOOGLE_SHEETS_ID is not configured")
+    throw new Error("FILES_CONFIG_ERROR")
   }
 
   return {
@@ -37,8 +54,8 @@ export async function fetchFileNodesFromSheet(): Promise<{
 }> {
   const { spreadsheetId, sheetTab } = getGoogleSheetsConfig()
   const credentialsRaw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-  if (!credentialsRaw) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not configured")
+  if (!credentialsRaw?.trim()) {
+    throw new Error("FILES_CONFIG_ERROR")
   }
 
   const credentials = parseServiceAccountJson(credentialsRaw)

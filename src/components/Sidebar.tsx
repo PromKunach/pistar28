@@ -19,6 +19,8 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { ContactPanel } from "@/components/ContactPanel";
+import { AboutPanel } from "@/components/AboutPanel";
 
 // ---------------------------------------------
 // Config — edit this to reshape the nav
@@ -29,6 +31,10 @@ type SubItem = {
   href: string;
   /** Opens in a new tab. External URLs (http/https) do this automatically. */
   openInNewTab?: boolean;
+  /** Opens the contact panel instead of navigating. */
+  opensContact?: boolean;
+  /** Opens the about panel instead of navigating. */
+  opensAbout?: boolean;
 };
 
 function isExternalHref(href: string) {
@@ -58,7 +64,31 @@ function NavSubLink({
   label,
   className,
   openInNewTab,
-}: SubItem & { className?: string }) {
+  opensContact,
+  opensAbout,
+  onOpenContact,
+  onOpenAbout,
+}: SubItem & {
+  className?: string;
+  onOpenContact?: () => void;
+  onOpenAbout?: () => void;
+}) {
+  if (opensContact) {
+    return (
+      <button type="button" onClick={onOpenContact} className={className}>
+        {label}
+      </button>
+    );
+  }
+
+  if (opensAbout) {
+    return (
+      <button type="button" onClick={onOpenAbout} className={className}>
+        {label}
+      </button>
+    );
+  }
+
   const trimmedHref = href.trim();
   const external = isExternalHref(trimmedHref) || openInNewTab;
 
@@ -87,7 +117,11 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   expandable?: boolean;
   href: string;
-  children?: SubItem[]; // sub-links shown when expanded
+  children?: SubItem[];
+  /** Opens the contact panel instead of navigating when the rail is collapsed. */
+  opensContact?: boolean;
+  /** Opens the about panel instead of navigating when the rail is collapsed. */
+  opensAbout?: boolean;
 };
 
 const NAV_TOP: NavItem[] = [
@@ -105,14 +139,16 @@ const NAV_BUILD: NavItem[] = [
     icon: Phone,
     expandable: true,
     href: "/contacts",
-    children: [{ label: "ช่องทางติดต่อ", href: "/contacts" }],
+    opensContact: true,
+    children: [{ label: "ช่องทางติดต่อ", href: "/contacts", opensContact: true }],
   },
   {
     label: "เกี่ยวกับพวกเรา",
     icon: Info,
     expandable: true,
-    href: "/contacts",
-    children: [{ label: "เกี่ยวกับเรา", href: "/about" }],
+    href: "/about",
+    opensAbout: true,
+    children: [{ label: "เกี่ยวกับเรา", href: "/about", opensAbout: true }],
   },
 ];
 
@@ -145,6 +181,20 @@ export default function Sidebar({
 
   // Tracks which expandable nav items are currently open, by label
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const [contactOpen, setContactOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+
+  const openContact = () => {
+    setAboutOpen(false);
+    setContactOpen(true);
+    onCloseMobile();
+  };
+
+  const openAbout = () => {
+    setContactOpen(false);
+    setAboutOpen(true);
+    onCloseMobile();
+  };
 
   const toggleItem = (label: string) => {
     setOpenItems((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -152,6 +202,9 @@ export default function Sidebar({
 
   return (
     <>
+      <ContactPanel open={contactOpen} onClose={() => setContactOpen(false)} />
+      <AboutPanel open={aboutOpen} onClose={() => setAboutOpen(false)} />
+
       {/* Backdrop — mobile only, dims page behind the drawer, click to close */}
       {mobileOpen && (
         <div
@@ -177,7 +230,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.6.0
+            version : beta 1
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
@@ -243,6 +296,20 @@ export default function Sidebar({
                             }`}
                           />
                         </button>
+                      ) : item.opensContact || item.opensAbout ? (
+                        <button
+                          type="button"
+                          onClick={item.opensContact ? openContact : openAbout}
+                          className={`group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium ${navItemClass} ${
+                            desktopCollapsed ? "lg:justify-center" : ""
+                          }`}
+                          title={desktopCollapsed ? item.label : undefined}
+                        >
+                          <item.icon className="h-[18px] w-[18px] shrink-0" />
+                          <span className={`flex-1 truncate text-left ${labelClass}`}>
+                            {item.label}
+                          </span>
+                        </button>
                       ) : (
                         <Link
                           href={item.href}
@@ -275,7 +342,9 @@ export default function Sidebar({
                               <li key={`${sub.label}-${sub.href}`}>
                                 <NavSubLink
                                   {...sub}
-                                  className={`block rounded-md py-1.5 text-sm ${
+                                  onOpenContact={openContact}
+                                  onOpenAbout={openAbout}
+                                  className={`block w-full rounded-md py-1.5 text-left text-sm ${
                                     isSubActive
                                       ? "bg-slate-100 text-slate-900"
                                       : "text-slate-500 hover:text-slate-800"

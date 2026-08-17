@@ -15,6 +15,14 @@ function getCacheKey(spreadsheetId: string, sheetTab: string) {
   return `${spreadsheetId}:${sheetTab}`
 }
 
+function getPublicErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return "โหลดเอกสารไม่สำเร็จ"
+  if (error.message === "FILES_CONFIG_ERROR") {
+    return "ระบบเอกสารยังไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง"
+  }
+  return error.message || "โหลดเอกสารไม่สำเร็จ"
+}
+
 export async function GET() {
   try {
     const { spreadsheetId, sheetTab, cacheTtlSeconds } = getGoogleSheetsConfig()
@@ -40,8 +48,9 @@ export async function GET() {
     return NextResponse.json({ ...result, cached: false })
   } catch (error) {
     console.error("[files/tree]", error)
-    const message =
-      error instanceof Error && error.message ? error.message : "โหลดเอกสารไม่สำเร็จ"
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json(
+      { error: getPublicErrorMessage(error) },
+      { status: 500 }
+    )
   }
 }

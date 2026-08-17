@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { clampStickerScale, type CardSticker } from "@/lib/profileCustomization";
 import { cn } from "@/lib/utils";
 
-import { STICKER_BASE_PX } from "@/components/member/cardDimensions";
+import { getStickerWidthPercent } from "@/components/member/cardDimensions";
 const DRAG_THRESHOLD_PX = 4;
 
 type DragMode = "move" | "resize" | "rotate";
@@ -172,7 +172,7 @@ export function CardStickerEditor({
   return (
     <>
       {stickers.map((sticker) => {
-        const size = STICKER_BASE_PX * sticker.scale;
+        const widthPercent = getStickerWidthPercent(sticker.scale);
         const selected = selectedId === sticker.id;
 
         return (
@@ -183,8 +183,8 @@ export function CardStickerEditor({
             style={{
               left: `${sticker.x * 100}%`,
               top: `${sticker.y * 100}%`,
-              width: size,
-              height: size,
+              width: `${widthPercent}%`,
+              aspectRatio: "1",
               transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg)`,
             }}
             onPointerDown={(e) => beginDrag(e, sticker, "move")}

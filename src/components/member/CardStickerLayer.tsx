@@ -2,13 +2,13 @@
 
 import type { CardSticker } from "@/lib/profileCustomization";
 
-import { STICKER_BASE_PX } from "@/components/member/cardDimensions";
+import { getStickerWidthPercent } from "@/components/member/cardDimensions";
 
 export function CardStickerLayer({ stickers }: { stickers: CardSticker[] }) {
   return (
     <>
       {stickers.map((sticker) => {
-        const size = STICKER_BASE_PX * sticker.scale;
+        const widthPercent = getStickerWidthPercent(sticker.scale);
         return (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -20,8 +20,9 @@ export function CardStickerLayer({ stickers }: { stickers: CardSticker[] }) {
             style={{
               left: `${sticker.x * 100}%`,
               top: `${sticker.y * 100}%`,
-              width: size,
-              height: size,
+              width: `${widthPercent}%`,
+              height: "auto",
+              aspectRatio: "1",
               transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg)`,
             }}
           />
