@@ -45,12 +45,16 @@ export function BlurFade({
   ...props
 }: BlurFadeProps) {
   const ref = useRef(null)
-  const [scrollRoot, setScrollRoot] = useState<Element | null>(null)
+  const scrollRootRef = useRef<Element | null>(null)
+  const [scrollRootReady, setScrollRootReady] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
 
   useEffect(() => {
     const main = document.querySelector("main.overflow-y-auto")
-    if (main) setScrollRoot(main)
+    if (main) {
+      scrollRootRef.current = main
+      setScrollRootReady(true)
+    }
 
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
     const updateMotion = () => setReducedMotion(mq.matches)
@@ -62,7 +66,7 @@ export function BlurFade({
   const inViewResult = useInView(ref, {
     once: false,
     margin: inViewMargin,
-    ...(scrollRoot ? { root: scrollRoot } : {}),
+    ...(scrollRootReady ? { root: scrollRootRef } : {}),
   })
   const isInView = !inView || inViewResult
   const defaultVariants: Variants = {
