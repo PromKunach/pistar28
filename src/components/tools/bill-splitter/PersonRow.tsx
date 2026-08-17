@@ -23,12 +23,14 @@ export function PersonRow({
       <span className="w-16 shrink-0 text-xs text-slate-500">
         {getPersonDisplayName(person, index)}
       </span>
-      <Input
-        value={person.name}
-        onChange={(e) => onNameChange(e.target.value)}
-        placeholder="ชื่อ (ไม่บังคับ)"
-        className="h-8 flex-1"
-      />
+      <div className="flex-1">
+        <Input
+          value={person.name}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder="ชื่อ (ไม่บังคับ)"
+          className="h-8"
+        />
+      </div>
       {canRemove ? (
         <button
           type="button"

@@ -123,6 +123,7 @@ export default function BillSplitterPage() {
                     )
                   );
                   setResult(null);
+                  setError(null);
                 }}
                 onRemove={() => removePerson(person.id)}
               />

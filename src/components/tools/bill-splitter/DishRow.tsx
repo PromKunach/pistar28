@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { BillDish, BillPerson } from "@/lib/billSplitter";
@@ -17,6 +18,26 @@ export function DishRow({
   onChange: (next: BillDish) => void;
   onRemove: () => void;
 }) {
+  const [priceInput, setPriceInput] = useState(
+    dish.price === 0 ? "" : String(dish.price)
+  );
+
+  useEffect(() => {
+    setPriceInput(dish.price === 0 ? "" : String(dish.price));
+  }, [dish.id]);
+
+  const handlePriceChange = (raw: string) => {
+    setPriceInput(raw);
+    if (raw === "" || raw === ".") {
+      onChange({ ...dish, price: 0 });
+      return;
+    }
+    const parsed = Number(raw);
+    if (!Number.isNaN(parsed)) {
+      onChange({ ...dish, price: parsed });
+    }
+  };
+
   const toggleEater = (personId: string) => {
     const has = dish.eaterIds.includes(personId);
     const eaterIds = has
@@ -28,20 +49,20 @@ export function DishRow({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex gap-2">
-        <Input
-          value={dish.name}
-          onChange={(e) => onChange({ ...dish, name: e.target.value })}
-          placeholder="ชื่อเมนู"
-          className="h-8 flex-1"
-        />
+        <div className="flex-1">
+          <Input
+            value={dish.name}
+            onChange={(e) => onChange({ ...dish, name: e.target.value })}
+            placeholder="ชื่อเมนู"
+            className="h-8"
+          />
+        </div>
         <Input
           type="number"
           min={0}
           step="0.01"
-          value={dish.price || ""}
-          onChange={(e) =>
-            onChange({ ...dish, price: Number(e.target.value) || 0 })
-          }
+          value={priceInput}
+          onChange={(e) => handlePriceChange(e.target.value)}
           placeholder="ราคา"
           className="h-8 w-24"
         />
