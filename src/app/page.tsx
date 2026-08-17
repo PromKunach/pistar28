@@ -40,8 +40,21 @@ export default async function DashboardPage() {
 
       {/* Hero */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 sm:pb-20">
-        <div className="relative mx-auto flex w-full flex-col items-center justify-center">
-          
+        <div className="relative mx-auto flex w-full flex-col  justify-center">
+        <DottedGlowBackground
+        className="pointer-events-none mask-radial-to-50%  mask-radial-at-center opacity-20 dark:opacity-100"
+        opacity={0.8}
+        gap={10}
+        radius={5}
+        colorLightVar="--color-black-500"
+        glowColorLightVar="--color-black-600"
+        colorDarkVar="--color-black-500"
+        glowColorDarkVar="--color-black-800"
+        backgroundOpacity={0}
+        speedMin={0.3}
+        speedMax={1.6}
+        speedScale={1}
+      />
 
           <div className="relative z-10 flex w-full flex-col items-center justify-center gap-4 md:flex-row md:items-center md:gap-6">
             <Image
