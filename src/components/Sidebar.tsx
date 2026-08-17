@@ -20,7 +20,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ContactPanel } from "@/components/ContactPanel";
 import { AboutPanel } from "@/components/AboutPanel";
-import { SidebarSearch } from "@/components/SidebarSearch";
 
 // ---------------------------------------------
 // Config — edit this to reshape the nav
@@ -230,7 +229,6 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : beta 1
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 
@@ -245,11 +243,7 @@ export default function Sidebar({
         </div>
 
         {/* Quick search */}
-        <SidebarSearch
-          desktopCollapsed={desktopCollapsed}
-          labelClass={labelClass}
-          onCloseMobile={onCloseMobile}
-        />
+        <div className="w-[90%] h-[36px] bg-slate-100 text-slate-500 text-sm flex items-center rounded-full shadow-md justify-center mx-auto ring-1 ring-slate-200 mt-4">version : beta 1</div>
 
         {/* Nav sections */}
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 font-sans no-scrollbar">

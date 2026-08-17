@@ -81,7 +81,7 @@ function MemberDetailPanel({
       : selectedProfile;
 
   return (
-    <div className="flex w-full flex-col items-center justify-center">
+    <div className="flex w-full flex-col items-center justify-center px-4 py-4 sm:px-6 sm:py-8 lg:min-h-full lg:py-12">
       <MemberInspectCard
         resetKey={selectedProfile.id}
         profile={profileWithEmail}
@@ -513,9 +513,9 @@ function MemberPageContent() {
         </InertialScrollArea>
       </section>
 
-      <section className="order-1 flex min-h-0 flex-1 flex-col overflow-hidden lg:order-2 lg:flex-none lg:w-[45%] xl:w-[40%]">
+      <section className="order-1 flex min-h-0 flex-1 flex-col lg:order-2 lg:flex-none lg:w-[45%] xl:w-[40%]">
         <div
-          className={`flex min-h-0 flex-1 items-center justify-center overflow-hidden ${MEMBER_CARD_PANEL_BLEED_CLASS}`}
+          className={`flex min-h-0 flex-1 items-center justify-center overflow-visible ${MEMBER_CARD_PANEL_BLEED_CLASS}`}
         >
           {selectedId ? (
             <MemberDetailPanel
