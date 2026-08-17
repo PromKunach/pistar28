@@ -1,0 +1,35 @@
+"use client";
+
+import type { ItemizedBillResult } from "@/lib/billSplitter";
+
+export function BillResultSection({ result }: { result: ItemizedBillResult }) {
+  return (
+    <div className="mt-6 space-y-4">
+      <h2 className="text-lg font-semibold text-slate-900">ผลลัพธ์</h2>
+      <div className="space-y-2">
+        {result.people.map((person) => (
+          <div
+            key={person.personId}
+            className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+          >
+            <p className="font-semibold text-slate-900">{person.displayName}</p>
+            <div className="mt-2 space-y-1 text-sm text-slate-600">
+              <p>อาหาร: {person.foodShare.toLocaleString("th-TH")} บาท</p>
+              <p>VAT: {person.vatShare.toLocaleString("th-TH")} บาท</p>
+              <p className="text-base font-semibold text-slate-900">
+                รวม: {person.total.toLocaleString("th-TH")} บาท
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        <p>รวมอาหาร: {result.foodSubtotal.toLocaleString("th-TH")} บาท</p>
+        <p>VAT รวม: {result.vatTotal.toLocaleString("th-TH")} บาท</p>
+        <p className="mt-1 font-semibold text-slate-900">
+          ยอดรวมทั้งหมด: {result.grandTotal.toLocaleString("th-TH")} บาท
+        </p>
+      </div>
+    </div>
+  );
+}

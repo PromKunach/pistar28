@@ -1,0 +1,44 @@
+"use client";
+
+import { X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import type { BillPerson } from "@/lib/billSplitter";
+import { getPersonDisplayName } from "@/lib/billSplitter";
+
+export function PersonRow({
+  person,
+  index,
+  onNameChange,
+  onRemove,
+  canRemove,
+}: {
+  person: BillPerson;
+  index: number;
+  onNameChange: (name: string) => void;
+  onRemove: () => void;
+  canRemove: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+      <span className="w-16 shrink-0 text-xs text-slate-500">
+        {getPersonDisplayName(person, index)}
+      </span>
+      <Input
+        value={person.name}
+        onChange={(e) => onNameChange(e.target.value)}
+        placeholder="ชื่อ (ไม่บังคับ)"
+        className="h-8 flex-1"
+      />
+      {canRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600"
+          aria-label="ลบคน"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
