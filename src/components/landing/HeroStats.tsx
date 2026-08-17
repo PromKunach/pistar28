@@ -108,7 +108,7 @@ export function HeroStats({
 
   const stats: StatItem[] = [
     { value: memberCount, label: "สมาชิกปัจจุบัน", suffix: "คน" },
-    { value: daysSinceSemesterOpen, label: "วันตั้งเเต่เปิดเทอม", suffix: "วัน" },
+    { value: daysSinceSemesterOpen, label: "เปิดเทอมมาเเล้ว", suffix: "วัน" },
     { value: daysRemaining, label: "นับถอยหลังจนเรียนจบ", suffix: "วัน" },
   ];
 

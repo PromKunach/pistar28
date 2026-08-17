@@ -80,7 +80,7 @@ function MemberDetailPanel({
       : selectedProfile;
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-12">
+    <div className="flex w-full flex-col items-center justify-center px-4 py-4 sm:px-6 sm:py-8 lg:min-h-full lg:py-12">
       <MemberInspectCard
         resetKey={selectedProfile.id}
         profile={profileWithEmail}
@@ -473,7 +473,7 @@ function MemberPageContent() {
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col lg:flex-row">
-      <section className="order-2 flex min-h-0 w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
+      <section className="order-2 flex min-h-0 flex-1 w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:flex-none lg:border-t-0 lg:border-r">
         <div className="shrink-0 border-b border-slate-100 p-4">
           <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <Search className="h-4 w-4 shrink-0 text-slate-400" />
@@ -512,20 +512,22 @@ function MemberPageContent() {
         </InertialScrollArea>
       </section>
 
-      <InertialScrollArea className="order-1 no-scrollbar min-h-0 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
-        {selectedId ? (
-          <MemberDetailPanel
-            profiles={profiles}
-            selectedId={selectedId}
-            authStudentId={user?.studentId ?? null}
-            authEmail={user?.email ?? null}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center p-8 text-sm text-slate-500">
-            เลือกสมาชิกเพื่อดูรายละเอียด
-          </div>
-        )}
-      </InertialScrollArea>
+      <section className="order-1 flex min-h-0 flex-1 flex-col overflow-hidden lg:order-2 lg:flex-none lg:w-[45%] xl:w-[40%]">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden lg:overflow-y-auto">
+          {selectedId ? (
+            <MemberDetailPanel
+              profiles={profiles}
+              selectedId={selectedId}
+              authStudentId={user?.studentId ?? null}
+              authEmail={user?.email ?? null}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center p-8 text-sm text-slate-500">
+              เลือกสมาชิกเพื่อดูรายละเอียด
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

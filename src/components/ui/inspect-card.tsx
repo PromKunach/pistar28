@@ -113,6 +113,8 @@ export function InspectCard({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
     boundsRef.current = event.currentTarget.getBoundingClientRect();
     drag.current = {
@@ -151,6 +153,8 @@ export function InspectCard({
     state.t = event.timeStamp;
     state.velocity = (dx * DRAG_SENSITIVITY) / dt;
     if (Math.abs(dx) + Math.abs(dy) > 2) state.moved = true;
+
+    event.preventDefault();
 
     baseY.set(baseY.get() + dx * DRAG_SENSITIVITY);
     baseX.set(clamp(baseX.get() - dy * DRAG_SENSITIVITY, -MAX_TILT_X, MAX_TILT_X));
@@ -227,7 +231,7 @@ export function InspectCard({
           onPointerLeave={handlePointerLeave}
           onKeyDown={handleKeyDown}
           className={cn(
-            "relative cursor-grab touch-pan-y select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-4",
+            "relative cursor-grab touch-none select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-4",
             MEMBER_CARD_DIMENSION_CLASS
           )}
           style={{
