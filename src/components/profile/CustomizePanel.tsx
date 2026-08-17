@@ -1,73 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
+import { ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardColorPicker } from "./CardColorPicker";
-import { StickerLibrary } from "./StickerLibrary";
-import { SelectorStickerRing } from "@/components/member/SelectorStickerRing";
-import type { MemberProfile } from "@/components/member/types";
-import {
-  clampSelectorStickers,
-  type ProfileCustomization,
-  type SelectorSticker,
-} from "@/lib/profileCustomization";
-import { SELECTOR_SLOTS, getStickerSrc } from "@/lib/stickerCatalog";
+import type { ProfileCustomization } from "@/lib/profileCustomization";
+import { PROFILE_BIO_MAX_LENGTH } from "@/lib/profileCustomization";
+import { formatStickerQuota, sumStickerBytes } from "@/lib/stickerQuota";
 import { cn } from "@/lib/utils";
 
 export function CustomizePanel({
-  profile,
   draft,
+  bio,
+  onBioChange,
   onChange,
   onSave,
   onReset,
+  onUploadSticker,
+  uploading = false,
   saving,
   saveMessage,
-  activeStickerId,
-  onActiveStickerIdChange,
 }: {
-  profile: MemberProfile;
   draft: ProfileCustomization;
+  bio: string;
+  onBioChange: (bio: string) => void;
   onChange: (next: ProfileCustomization) => void;
   onSave: () => void;
   onReset: () => void;
+  onUploadSticker: (file: File) => Promise<void>;
+  uploading?: boolean;
   saving: boolean;
   saveMessage: string | null;
-  activeStickerId: string | null;
-  onActiveStickerIdChange: (id: string | null) => void;
 }) {
-  const [activeSlot, setActiveSlot] = useState<SelectorSticker["slot"] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const used = sumStickerBytes(draft);
 
   function updateDraft(partial: Partial<ProfileCustomization>) {
     onChange({ ...draft, ...partial });
   }
 
-  function handleAssignSelectorSticker(stickerId: string) {
-    if (!activeSlot) return;
-
-    const withoutSlot = draft.selector_stickers.filter((s) => s.slot !== activeSlot);
-    const next = clampSelectorStickers([
-      ...withoutSlot,
-      { id: stickerId, slot: activeSlot },
-    ]);
-
-    onChange({ ...draft, selector_stickers: next });
-    setActiveSlot(null);
-  }
-
-  function handleStickerLibrarySelect(id: string) {
-    if (activeSlot) {
-      handleAssignSelectorSticker(id);
-      return;
-    }
-    onActiveStickerIdChange(activeStickerId === id ? null : id);
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await onUploadSticker(file);
   }
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">ปรับแต่งการ์ด</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          เปลี่ยนสี สติกเกอร์บนการ์ด และสติกเกอร์รอบอวตาร
+        <p className="mt-1 text-sm text-slate-500">เปลี่ยนสี สติกเกอร์ และ bio บนการ์ด</p>
+      </div>
+
+      <div>
+        <label htmlFor="profile-bio" className="text-sm font-medium text-slate-900">
+          Bio
+        </label>
+        <p className="mt-0.5 text-xs text-slate-500">
+          แสดงบนด้านหลังการ์ด สูงสุด {PROFILE_BIO_MAX_LENGTH} ตัวอักษร
+        </p>
+        <textarea
+          id="profile-bio"
+          rows={3}
+          value={bio}
+          onChange={(event) =>
+            onBioChange(event.target.value.slice(0, PROFILE_BIO_MAX_LENGTH))
+          }
+          className="mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+          placeholder="เขียนเกี่ยวกับตัวคุณ..."
+        />
+        <p className="mt-1 text-right text-xs text-slate-400">
+          {bio.length}/{PROFILE_BIO_MAX_LENGTH}
         </p>
       </div>
 
@@ -78,67 +82,26 @@ export function CustomizePanel({
         onCardColorChange={(card_color) => updateDraft({ card_color })}
       />
 
-      <StickerLibrary
-        activeStickerId={activeSlot ? null : activeStickerId}
-        onSelect={handleStickerLibrarySelect}
-      />
-
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-slate-900">สติกเกอร์รอบอวตาร</p>
-        <p className="text-xs text-slate-500">
-          เลือกตำแหน่งแล้วเลือกสติกเกอร์ (สูงสุด 3 ตำแหน่ง)
-        </p>
-
-        <div className="flex items-center gap-4">
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200">
-            <SelectorStickerRing stickers={draft.selector_stickers} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={profile.url}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {SELECTOR_SLOTS.map((slot) => {
-              const assigned = draft.selector_stickers.find((s) => s.slot === slot.id);
-              const src = assigned ? getStickerSrc(assigned.id) : null;
-              const isActive = activeSlot === slot.id;
-
-              return (
-                <button
-                  key={slot.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveSlot((current) => (current === slot.id ? null : slot.id));
-                    onActiveStickerIdChange(null);
-                  }}
-                  className={cn(
-                    "flex h-10 min-w-[3rem] items-center justify-center rounded-lg border px-2 text-xs font-medium transition-colors",
-                    isActive
-                      ? "border-slate-900 bg-slate-100 text-slate-900"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  {src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={src} alt="" className="h-6 w-6 object-contain" />
-                  ) : (
-                    slot.label
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {activeSlot && (
-          <p className="text-xs text-amber-700">
-            เลือกสติกเกอร์จากคลังเพื่อวางที่ตำแหน่ง{" "}
-            {SELECTOR_SLOTS.find((s) => s.id === activeSlot)?.label}
-          </p>
-        )}
+      <div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg"
+          className="hidden"
+          onChange={(e) => void handleFileChange(e)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full justify-center gap-2"
+        >
+          <ImagePlus className="h-4 w-4" />
+          {uploading ? "กำลังอัปโหลด..." : "เพิ่มสติกเกอร์"}
+        </Button>
+        <p className="mt-2 text-xs text-slate-500">พื้นที่สติกเกอร์: {formatStickerQuota(used)}</p>
+        <p className="mt-1 text-xs text-slate-400">รองรับ PNG และ JPG สูงสุด 1 MB ต่อผู้ใช้ (รวมทุกสติกเกอร์)</p>
       </div>
 
       {saveMessage && (
@@ -165,8 +128,6 @@ export function CustomizePanel({
           onClick={() => {
             if (confirm("รีเซ็ตการตั้งค่าการ์ดทั้งหมด?")) {
               onReset();
-              onActiveStickerIdChange(null);
-              setActiveSlot(null);
             }
           }}
           disabled={saving}

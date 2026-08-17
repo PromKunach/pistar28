@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCustomizationUpdatePayload,
+  buildProfileSavePayload,
   DEFAULT_CUSTOMIZATION,
   type ProfileCustomization,
 } from "./profileCustomization";
@@ -12,7 +13,18 @@ describe("buildCustomizationUpdatePayload", () => {
       card_color: "#ff0000",
       card_text_color: "#00ff00",
       card_stickers: {
-        front: [{ id: "star-01", x: 0.5, y: 0.5, scale: 1, rotation: 0 }],
+        front: [
+          {
+            id: "uuid-1",
+            url: "https://example.com/s.png",
+            storage_path: "images/stickers/1/uuid-1.png",
+            size_bytes: 12000,
+            x: 0.5,
+            y: 0.5,
+            scale: 1,
+            rotation: 0,
+          },
+        ],
         back: [],
       },
       selector_stickers: [{ id: "heart-01", slot: "top" }],
@@ -35,6 +47,19 @@ describe("buildCustomizationUpdatePayload", () => {
       card_stickers: { front: [], back: [] },
       selector_stickers: [],
       privacy_settings: { show_email: false },
+    });
+  });
+});
+
+describe("buildProfileSavePayload", () => {
+  it("includes bio with customization fields", () => {
+    expect(buildProfileSavePayload(DEFAULT_CUSTOMIZATION, "  hello bio  ")).toEqual({
+      card_color: "#0f172a",
+      card_text_color: "#ffffff",
+      card_stickers: { front: [], back: [] },
+      selector_stickers: [],
+      privacy_settings: { show_email: false },
+      bio: "hello bio",
     });
   });
 });

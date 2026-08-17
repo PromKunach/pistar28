@@ -1,34 +1,28 @@
 "use client";
 
-import { getStickerSrc } from "@/lib/stickerCatalog";
 import type { CardSticker } from "@/lib/profileCustomization";
 
-export function CardStickerLayer({
-  stickers,
-  editable = false,
-}: {
-  stickers: CardSticker[];
-  editable?: boolean;
-}) {
+import { STICKER_BASE_PX } from "@/components/member/cardDimensions";
+
+export function CardStickerLayer({ stickers }: { stickers: CardSticker[] }) {
   return (
     <>
       {stickers.map((sticker) => {
-        const src = getStickerSrc(sticker.id);
-        if (!src) return null;
+        const size = STICKER_BASE_PX * sticker.scale;
         return (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={`${sticker.id}-${sticker.x}-${sticker.y}`}
-            src={src}
+            key={sticker.id}
+            src={sticker.url}
             alt=""
             draggable={false}
-            className={`absolute z-20 h-10 w-10 -translate-x-1/2 -translate-y-1/2 object-contain sm:h-12 sm:w-12 ${
-              editable ? "" : "pointer-events-none"
-            }`}
+            className="pointer-events-none absolute z-20 object-contain"
             style={{
               left: `${sticker.x * 100}%`,
               top: `${sticker.y * 100}%`,
-              transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
+              width: size,
+              height: size,
+              transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg)`,
             }}
           />
         );

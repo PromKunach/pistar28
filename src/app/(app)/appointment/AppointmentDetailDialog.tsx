@@ -17,10 +17,12 @@ import {
   appointmentDescriptionDisplay,
   appointmentTagLabel,
   fetchSeriesMembersForRecord,
+  isBoardSourcedAppointment,
   recordToEditDraft,
   type AppointmentEditDraft,
   type AppointmentRecord,
 } from "@/lib/appointments"
+import { isAppointmentLinkedOnBoard } from "@/lib/announcementBoard"
 import type { SavedAppointmentTag } from "@/lib/appointmentTags"
 import { cn } from "@/lib/utils"
 
@@ -52,6 +54,7 @@ export function AppointmentDetailDialog({
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isLinkedOnBoard, setIsLinkedOnBoard] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (!open || !appointment) return
@@ -64,12 +67,25 @@ export function AppointmentDetailDialog({
     setIsDeleting(false)
     setDraft(null)
     setSeriesMembers([])
+    setIsLinkedOnBoard(null)
 
     void fetchSeriesMembersForRecord(appointment).then((members) => {
       if (cancelled) return
       setSeriesMembers(members)
       setDraft(recordToEditDraft(appointment, members))
     })
+
+    if (isBoardSourcedAppointment(appointment)) {
+      void isAppointmentLinkedOnBoard(appointment.id)
+        .then((linked) => {
+          if (!cancelled) setIsLinkedOnBoard(linked)
+        })
+        .catch(() => {
+          if (!cancelled) setIsLinkedOnBoard(false)
+        })
+    } else {
+      setIsLinkedOnBoard(false)
+    }
 
     return () => {
       cancelled = true
@@ -94,6 +110,9 @@ export function AppointmentDetailDialog({
   }, [open, onClose])
 
   const canSave = Boolean(draft?.title.trim()) && !isSaving && !isDeleting
+  const boardSourced = appointment ? isBoardSourcedAppointment(appointment) : false
+  const deleteBlockedOnCalendar = boardSourced && isLinkedOnBoard === true
+  const orphanedBoardAppointment = boardSourced && isLinkedOnBoard === false
 
   const handleSave = async () => {
     if (!draft || !canSave) return
@@ -109,9 +128,14 @@ export function AppointmentDetailDialog({
     }
   }
 
+  const requestDelete = () => {
+    setConfirmDelete(true)
+    setError(null)
+  }
+
   const handleDelete = async () => {
     if (!confirmDelete) {
-      setConfirmDelete(true)
+      requestDelete()
       return
     }
 
@@ -227,6 +251,15 @@ export function AppointmentDetailDialog({
                   ) : (
                     <p className="text-sm text-slate-400 dark:text-neutral-500">ไม่มีคำอธิบาย</p>
                   )}
+                  {deleteBlockedOnCalendar ? (
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                      นัดหมายนี้มาจากบอร์ด — ลบได้ที่หน้าบอร์ดประกาศเท่านั้น
+                    </p>
+                  ) : orphanedBoardAppointment ? (
+                    <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                      นัดหมายนี้ไม่ได้เชื่อมกับบอร์ดแล้ว — ลบได้ที่นี่
+                    </p>
+                  ) : null}
                   <div className="flex justify-end pt-2">
                     <Button type="button" size="sm" onClick={() => setTab("edit")}>
                       แก้ไข
@@ -393,48 +426,61 @@ export function AppointmentDetailDialog({
                     </Button>
                   </div>
 
-                  <div className="rounded-xl border border-red-200 bg-red-50/50 p-3 dark:border-red-900/50 dark:bg-red-950/20">
-                    <p className="mb-2 text-xs font-medium text-red-700 dark:text-red-400">โซนอันตราย</p>
-                    {confirmDelete ? (
-                      <div className="space-y-2">
-                        <p className="text-sm text-red-700 dark:text-red-300">
-                          {appointment?.series_id || seriesMembers.length > 1
-                            ? "ลบนัดหมายทั้งช่วงนี้ถาวร? การกระทำนี้ย้อนกลับไม่ได้"
-                            : "ลบนัดหมายนี้ถาวร? การกระทำนี้ย้อนกลับไม่ได้"}
+                  {deleteBlockedOnCalendar ? (
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                      นัดหมายนี้มาจากบอร์ด — ลบได้ที่หน้าบอร์ดประกาศเท่านั้น
+                    </p>
+                  ) : (
+                    <>
+                      {orphanedBoardAppointment ? (
+                        <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                          นัดหมายนี้ไม่ได้เชื่อมกับบอร์ดแล้ว — ลบได้ที่นี่
                         </p>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConfirmDelete(false)}
-                            disabled={isDeleting}
-                          >
-                            ยกเลิก
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => void handleDelete()}
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? "กำลังลบ..." : "ยืนยันการลบ"}
-                          </Button>
-                        </div>
+                      ) : null}
+                    <div className="rounded-xl border border-red-200 bg-red-50/50 p-3 dark:border-red-900/50 dark:bg-red-950/20">
+                      <p className="mb-2 text-xs font-medium text-red-700 dark:text-red-400">โซนอันตราย</p>
+                      {confirmDelete ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-red-700 dark:text-red-300">
+                            {appointment?.series_id || seriesMembers.length > 1
+                              ? "ลบนัดหมายทั้งช่วงนี้ถาวร? การกระทำนี้ย้อนกลับไม่ได้"
+                              : "ลบนัดหมายนี้ถาวร? การกระทำนี้ย้อนกลับไม่ได้"}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setConfirmDelete(false)}
+                              disabled={isDeleting}
+                            >
+                              ยกเลิก
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                          onClick={() => void handleDelete()}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "กำลังลบ..." : "ยืนยันการลบ"}
+                        </Button>
                       </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => void handleDelete()}
-                        disabled={isSaving}
-                      >
-                        ลบนัดหมาย
-                      </Button>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={requestDelete}
+                      disabled={isSaving || isDeleting}
+                    >
+                      ลบนัดหมาย
+                    </Button>
+                  )}
+                    </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

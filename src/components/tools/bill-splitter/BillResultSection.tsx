@@ -14,7 +14,17 @@ export function BillResultSection({ result }: { result: ItemizedBillResult }) {
           >
             <p className="font-semibold text-slate-900">{person.displayName}</p>
             <div className="mt-2 space-y-1 text-sm text-slate-600">
-              <p>อาหาร: {person.foodShare.toLocaleString("th-TH")} บาท</p>
+              {person.dishes.length > 0 ? (
+                <div className="space-y-0.5">
+                  {person.dishes.map((dish) => (
+                    <p key={dish.dishId}>
+                      {dish.dishName}: {dish.amount.toLocaleString("th-TH")} บาท
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+              <p>ส่วนร่วม: {person.sharedShare.toLocaleString("th-TH")} บาท</p>
+              <p>รวมอาหาร: {person.foodShare.toLocaleString("th-TH")} บาท</p>
               <p>VAT: {person.vatShare.toLocaleString("th-TH")} บาท</p>
               <p className="text-base font-semibold text-slate-900">
                 รวม: {person.total.toLocaleString("th-TH")} บาท
@@ -24,7 +34,9 @@ export function BillResultSection({ result }: { result: ItemizedBillResult }) {
         ))}
       </div>
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-        <p>รวมอาหาร: {result.foodSubtotal.toLocaleString("th-TH")} บาท</p>
+        <p>ยอดบิล: {result.overallTotal.toLocaleString("th-TH")} บาท</p>
+        <p>หักเมนู: {result.assignedTotal.toLocaleString("th-TH")} บาท</p>
+        <p>คงเหลือ (หารเท่าๆ กัน): {result.remainder.toLocaleString("th-TH")} บาท</p>
         <p>VAT รวม: {result.vatTotal.toLocaleString("th-TH")} บาท</p>
         <p className="mt-1 font-semibold text-slate-900">
           ยอดรวมทั้งหมด: {result.grandTotal.toLocaleString("th-TH")} บาท

@@ -43,6 +43,7 @@ import {
 import { PaperDateCard } from "@/app/(app)/appointment/PaperDateCard"
 import {
   getAppointmentAccentColor,
+  MiniDatePicker,
   TagSelector,
   TONE_ACCENT,
 } from "@/app/(app)/appointment/appointment-ui"
@@ -2756,6 +2757,36 @@ export default function AnnouncementBoardPage() {
     [user, title]
   )
 
+  const updateConnectionAppointmentDate = useCallback(
+    async (connectionId: string, date: Date) => {
+      if (!user) return
+
+      const connection = connectionsRef.current.find((item) => item.id === connectionId)
+      if (!connection?.appointmentId) return
+
+      const appointment = appointmentCache[connection.appointmentId]
+      if (!appointment) return
+
+      const draft = {
+        ...recordToEditDraft(appointment),
+        isRange: false,
+        startDate: date,
+        endDate: date,
+      }
+
+      const records = await updateAppointment(
+        connection.appointmentId,
+        draft,
+        user.studentId
+      )
+      const primary = records[0]
+      if (primary) {
+        setAppointmentCache((current) => ({ ...current, [primary.id]: primary }))
+      }
+    },
+    [appointmentCache, user]
+  )
+
   const updateConnectionTag = useCallback(
     async (
       connectionId: string,
@@ -2939,16 +2970,20 @@ export default function AnnouncementBoardPage() {
     const removedConnections = connectionsRef.current.filter(
       (connection) => connection.fromId === id || connection.toId === id
     )
+    const appointmentIds = new Set<string>()
     for (const connection of removedConnections) {
       if (connection.appointmentId) {
-        void deleteAppointment(connection.appointmentId).catch(() => undefined)
+        appointmentIds.add(connection.appointmentId)
       }
     }
-    if (removedConnections.some((connection) => connection.appointmentId)) {
+    for (const appointmentId of appointmentIds) {
+      void deleteAppointment(appointmentId).catch(() => undefined)
+    }
+    if (appointmentIds.size > 0) {
       setAppointmentCache((current) => {
         const next = { ...current }
-        for (const connection of removedConnections) {
-          if (connection.appointmentId) delete next[connection.appointmentId]
+        for (const appointmentId of appointmentIds) {
+          delete next[appointmentId]
         }
         return next
       })
@@ -3466,6 +3501,24 @@ export default function AnnouncementBoardPage() {
       openPanel(block.id, canEditBlock(block, user))
     },
     [connectingFromId, selectBlock, toggleLinkReveal, openPanel, user]
+  )
+
+  const activateAppointmentBlock = useCallback(
+    (block: BoardAppointmentBlock) => {
+      if (
+        blockClickRef.current?.blockId === block.id &&
+        blockClickRef.current.moved
+      ) {
+        return
+      }
+      setLastSelectedBlockId(block.id)
+      if (connectingFromId) {
+        selectBlock(block.id)
+        return
+      }
+      openPanel(block.id, canEditBlock(block, user))
+    },
+    [connectingFromId, selectBlock, openPanel, user]
   )
 
   const startBlockDrag = (
@@ -4182,7 +4235,7 @@ export default function AnnouncementBoardPage() {
                   topStackIds={topStackBlockIds}
                   onPointerDown={sharedHandlers.onPointerDown}
                   onPointerUp={sharedHandlers.onPointerUp}
-                  onSelect={sharedHandlers.onSelect}
+                  onSelect={() => activateAppointmentBlock(block)}
                   onMeasure={sharedHandlers.onMeasure}
                 />
               )
@@ -4477,7 +4530,7 @@ export default function AnnouncementBoardPage() {
                   <div className="space-y-3.5">
                     <Label>ข้อความที่เชื่อม</Label>
                     {selectedAppointmentLinks.length > 0 ? (
-                      <ul className="mt-2 space-y-2">
+                      <ul className="mt-2 space-y-3">
                         {selectedAppointmentLinks.map((connection) => {
                           const otherId =
                             connection.fromId === selectedBlock.id
@@ -4502,25 +4555,50 @@ export default function AnnouncementBoardPage() {
                                   {textBlock.description.trim()}
                                 </p>
                               ) : null}
-                              {appointment ? (
-                                <p className="mt-2 text-xs text-neutral-500">
-                                  {appointmentDateLabel(appointment)}
-                                </p>
+
+                              {isPanelEditing && canEditSelected && appointment ? (
+                                <div className="mt-3 space-y-3">
+                                  <MiniDatePicker
+                                    label="วันนัดหมาย"
+                                    value={parseScheduledDate(appointment.scheduled_date)}
+                                    onChange={(date) => {
+                                      void updateConnectionAppointmentDate(connection.id, date)
+                                    }}
+                                  />
+                                  <TagSelector
+                                    tone={connection.tone ?? "neutral"}
+                                    customTagLabel={connection.customTagLabel ?? null}
+                                    customTagColor={connection.customTagColor ?? null}
+                                    savedTags={savedAppointmentTags}
+                                    onPersistTag={(label, color) => {
+                                      void handlePersistAppointmentTag(label, color)
+                                    }}
+                                    onChange={(tag) => {
+                                      void updateConnectionTag(connection.id, tag)
+                                    }}
+                                  />
+                                </div>
+                              ) : appointment ? (
+                                <>
+                                  <p className="mt-2 text-xs text-neutral-500">
+                                    {appointmentDateLabel(appointment)}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTagEditorConnectionId(connection.id)}
+                                    className="mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                                    style={{ borderColor: connectionAccentColor(connection) }}
+                                  >
+                                    <span
+                                      className="h-1.5 w-1.5 rounded-full"
+                                      style={{
+                                        backgroundColor: connectionAccentColor(connection),
+                                      }}
+                                    />
+                                    {connectionTagLabel(connection)}
+                                  </button>
+                                </>
                               ) : null}
-                              <button
-                                type="button"
-                                onClick={() => setTagEditorConnectionId(connection.id)}
-                                className="mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                                style={{ borderColor: connectionAccentColor(connection) }}
-                              >
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full"
-                                  style={{
-                                    backgroundColor: connectionAccentColor(connection),
-                                  }}
-                                />
-                                {connectionTagLabel(connection)}
-                              </button>
                             </li>
                           )
                         })}
@@ -4717,7 +4795,6 @@ export default function AnnouncementBoardPage() {
             <div className="space-y-3 border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
               {canEditSelected &&
                 !isDockBlock(selectedBlock) &&
-                !isAppointmentBlock(selectedBlock) &&
                 (isPanelEditing ? (
                   <Button
                     type="button"

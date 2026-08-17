@@ -6,18 +6,16 @@ import type { MemberProfile } from "@/components/member/types";
 export function AccountPanel({
   profile,
   email,
-  showEmail,
 }: {
   profile: MemberProfile;
   email: string;
-  showEmail: boolean;
 }) {
   const fields = [
     { label: "ชื่อ-นามสกุล", value: profile.full_name_th },
     { label: "ชื่อเล่น", value: profile.nickname_th },
     { label: "รหัสนักศึกษา", value: profile.pbri_id },
     { label: "ฝ่าย", value: profile.section },
-    ...(showEmail ? [{ label: "อีเมล", value: email }] : []),
+    { label: "อีเมล", value: email },
   ];
 
   return (

@@ -1,21 +1,28 @@
 "use client";
 
+import { useRef } from "react";
 import type { ProfileCustomization } from "@/lib/profileCustomization";
+import type { CardStickerEditProps } from "./cardStickerTypes";
+import { CardStickerEditor } from "./CardStickerEditor";
 import { CardStickerLayer } from "./CardStickerLayer";
 import type { MemberProfile } from "./types";
 
 export function MemberCardBack({
   profile,
   customization,
-  showEmail = false,
+  stickerEdit,
 }: {
   profile: MemberProfile;
   customization: ProfileCustomization;
-  showEmail?: boolean;
+  stickerEdit?: CardStickerEditProps;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const bio = profile.bio?.trim() ?? "";
+
   return (
     <div
-      className="relative h-full w-full overflow-hidden rounded-[1.75rem] shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-black/10"
+      ref={cardRef}
+      className="relative flex h-full w-full flex-col overflow-visible rounded-[1.75rem] shadow-[0_25px_50px_-12px_rgba(15,23,42,0.45)] ring-1 ring-black/10"
       style={{
         backgroundColor: customization.card_color,
         color: customization.card_text_color,
@@ -30,10 +37,8 @@ export function MemberCardBack({
           backgroundSize: "14px 14px",
         }}
       />
-      <CardStickerLayer stickers={customization.card_stickers.back} />
-      <div className="absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-current/15" />
 
-      <div className="relative p-3.5 sm:p-5">
+      <div className="relative flex min-h-0 flex-1 flex-col p-3.5 sm:p-5">
         <div className="flex items-center gap-2.5 border-b border-current/10 pb-3 sm:gap-3 sm:pb-4">
           <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-current/25 sm:h-11 sm:w-11">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -45,16 +50,23 @@ export function MemberCardBack({
               className="h-full w-full object-cover"
             />
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-semibold sm:text-sm">{profile.full_name_th}</p>
-            <p className="truncate text-xs opacity-55">({profile.nickname_th})</p>
-            <p className="truncate text-xs opacity-55">({profile.pbri_id})</p>
-            {showEmail && profile.email ? (
-              <p className="truncate text-xs opacity-55">{profile.email}</p>
-            ) : null}
-          </div>
+          <p className="min-w-0 truncate text-sm font-semibold sm:text-base">
+            {profile.nickname_th}
+          </p>
         </div>
+
+        {bio ? (
+          <p className="mt-3 whitespace-pre-wrap text-xs leading-relaxed opacity-80 sm:mt-4 sm:text-sm">
+            {bio}
+          </p>
+        ) : null}
       </div>
+
+      {stickerEdit ? (
+        <CardStickerEditor containerRef={cardRef} {...stickerEdit} />
+      ) : (
+        <CardStickerLayer stickers={customization.card_stickers.back} />
+      )}
     </div>
   );
 }

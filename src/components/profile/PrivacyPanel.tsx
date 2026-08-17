@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabaseClient";
-import type { ProfileCustomization } from "@/lib/profileCustomization";
-import { cn } from "@/lib/utils";
 
 function mapPasswordError(message: string): string {
   const lower = message.toLowerCase();
@@ -26,21 +24,7 @@ function mapPasswordError(message: string): string {
   return "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองอีกครั้ง";
 }
 
-export function PrivacyPanel({
-  draft,
-  onPrivacyChange,
-  email,
-  onSave,
-  saving,
-  saveMessage,
-}: {
-  draft: ProfileCustomization;
-  onPrivacyChange: (show_email: boolean) => void;
-  email: string;
-  onSave: () => void;
-  saving: boolean;
-  saveMessage: string | null;
-}) {
+export function PrivacyPanel({ email }: { email: string }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -102,31 +86,7 @@ export function PrivacyPanel({
     <div className="space-y-6 p-4 sm:p-6">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">ความเป็นส่วนตัว</h2>
-        <p className="mt-1 text-sm text-slate-500">จัดการการแสดงข้อมูลและรหัสผ่าน</p>
-      </div>
-
-      <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-slate-900">แสดงอีเมล</p>
-          <p className="text-xs text-slate-500">แสดงอีเมลบนด้านหลังการ์ดของคุณ</p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={draft.privacy_settings.show_email}
-          onClick={() => onPrivacyChange(!draft.privacy_settings.show_email)}
-          className={cn(
-            "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-            draft.privacy_settings.show_email ? "bg-slate-900" : "bg-slate-200"
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-              draft.privacy_settings.show_email && "translate-x-5"
-            )}
-          />
-        </button>
+        <p className="mt-1 text-sm text-slate-500">จัดการรหัสผ่านและเซสชัน</p>
       </div>
 
       <form onSubmit={(e) => void handlePasswordSubmit(e)} className="space-y-4">
@@ -190,26 +150,6 @@ export function PrivacyPanel({
         <p className="text-sm font-medium text-slate-900">สถานะเซสชัน</p>
         <p className="mt-1 text-sm text-slate-600">เข้าสู่ระบบอยู่</p>
         <p className="mt-0.5 truncate text-xs text-slate-500">{email}</p>
-      </div>
-
-      {saveMessage && (
-        <p
-          role="status"
-          className={cn(
-            "rounded-lg px-3 py-2 text-sm",
-            saveMessage.includes("บันทึกแล้ว")
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
-          )}
-        >
-          {saveMessage}
-        </p>
-      )}
-
-      <div className="border-t border-slate-100 pt-4">
-        <Button type="button" onClick={onSave} disabled={saving}>
-          {saving ? "กำลังบันทึก..." : "บันทึก"}
-        </Button>
       </div>
     </div>
   );

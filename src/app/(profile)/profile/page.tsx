@@ -6,9 +6,17 @@ import { useCurrentUser } from "@/lib/userProfile";
 import {
   DEFAULT_CUSTOMIZATION,
   fetchProfileByAuthEmail,
+  normalizeBio,
   saveProfileCustomization,
   type ProfileCustomization,
+  clampCardStickers,
 } from "@/lib/profileCustomization";
+import {
+  deleteAllCardStickers,
+  deleteCardSticker,
+  uploadCardSticker,
+  validateStickerUpload,
+} from "@/lib/cardStickerUpload";
 import { useProfileSection } from "@/components/profile/ProfileSectionContext";
 import { CustomizePanel } from "@/components/profile/CustomizePanel";
 import { PrivacyPanel } from "@/components/profile/PrivacyPanel";
@@ -16,10 +24,38 @@ import { AccountPanel } from "@/components/profile/AccountPanel";
 import { ProfileCardPreview } from "@/components/profile/ProfileCardPreview";
 import type { MemberProfile } from "@/components/member/types";
 import { cn } from "@/lib/utils";
-import {
-  clampCardStickers,
-  clampSelectorStickers,
-} from "@/lib/profileCustomization";
+
+const PROFILE_CACHE_KEY = "pistar_profile_cache";
+
+type ProfileCache = {
+  email: string;
+  profile: MemberProfile;
+  customization: ProfileCustomization;
+};
+
+function readProfileCache(email: string): ProfileCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ProfileCache;
+    if (parsed.email === email && parsed.profile && parsed.customization) {
+      return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function writeProfileCache(cache: ProfileCache) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* ignore */
+  }
+}
 
 function ProfileSkeleton() {
   return (
@@ -42,12 +78,12 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [email, setEmail] = useState("");
   const [draft, setDraft] = useState<ProfileCustomization>(DEFAULT_CUSTOMIZATION);
+  const [draftBio, setDraftBio] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-
-  const [activeStickerId, setActiveStickerId] = useState<string | null>(null);
   const [activeFace, setActiveFace] = useState<"front" | "back">("front");
 
   useEffect(() => {
@@ -60,10 +96,21 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!ready || !user?.email) return;
 
+    const cached = readProfileCache(user.email);
+    if (cached) {
+      setProfile(cached.profile);
+      setEmail(cached.email);
+      setDraft(cached.customization);
+      setDraftBio(cached.profile.bio ?? "");
+      setLoading(false);
+    }
+
     let cancelled = false;
 
     async function load() {
-      setLoading(true);
+      if (!cached) {
+        setLoading(true);
+      }
       setLoadError(null);
 
       const result = await fetchProfileByAuthEmail(user!.email);
@@ -71,7 +118,9 @@ export default function ProfilePage() {
       if (cancelled) return;
 
       if (!result) {
-        setLoadError("ไม่พบข้อมูลโปรไฟล์");
+        if (!cached) {
+          setLoadError("ไม่พบข้อมูลโปรไฟล์");
+        }
         setLoading(false);
         return;
       }
@@ -79,6 +128,12 @@ export default function ProfilePage() {
       setProfile(result.profile);
       setEmail(result.email);
       setDraft(result.customization);
+      setDraftBio(result.profile.bio);
+      writeProfileCache({
+        email: result.email,
+        profile: result.profile,
+        customization: result.customization,
+      });
       setLoading(false);
     }
 
@@ -87,7 +142,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [ready, user]);
+  }, [ready, user?.email]);
 
   const handleSave = useCallback(async () => {
     if (!profile) return;
@@ -101,10 +156,10 @@ export default function ProfilePage() {
         front: clampCardStickers(draft.card_stickers.front, "front"),
         back: clampCardStickers(draft.card_stickers.back, "back"),
       },
-      selector_stickers: clampSelectorStickers(draft.selector_stickers),
+      selector_stickers: [],
     };
 
-    const { error } = await saveProfileCustomization(profile.id, normalized);
+    const { error } = await saveProfileCustomization(profile.id, normalized, draftBio);
 
     setSaving(false);
 
@@ -113,45 +168,106 @@ export default function ProfilePage() {
       return;
     }
 
+    const savedBio = normalizeBio(draftBio);
+    setDraftBio(savedBio);
+    const updatedProfile = { ...profile, bio: savedBio };
+    setProfile(updatedProfile);
     setDraft(normalized);
+    writeProfileCache({
+      email,
+      profile: updatedProfile,
+      customization: normalized,
+    });
     setSaveMessage("บันทึกแล้ว");
     setTimeout(() => setSaveMessage(null), 3000);
-  }, [draft, profile]);
+  }, [draft, draftBio, profile, email]);
 
-  const handleReset = useCallback(() => {
+  const handleReset = useCallback(async () => {
+    await deleteAllCardStickers(draft);
     setDraft({ ...DEFAULT_CUSTOMIZATION });
-  }, []);
+    setDraftBio("");
+  }, [draft]);
 
-  function handlePlaceSticker(face: "front" | "back", x: number, y: number) {
-    if (!activeStickerId) return;
-    const current = draft.card_stickers[face];
-    if (current.length >= 5) return;
+  async function handleUploadSticker(face: "front" | "back", file: File) {
+    if (!profile) return;
+    const err = validateStickerUpload(draft, file);
+    if (err) {
+      setSaveMessage(err);
+      return;
+    }
+    setUploading(true);
+    try {
+      const sticker = await uploadCardSticker(profile.id, file);
+      setDraft((prev) => ({
+        ...prev,
+        card_stickers: {
+          ...prev.card_stickers,
+          [face]: [...prev.card_stickers[face], sticker],
+        },
+      }));
+    } catch (error) {
+      console.error("Sticker upload failed:", error);
+      setSaveMessage("อัปโหลดไม่สำเร็จ กรุณาลองอีกครั้ง");
+    } finally {
+      setUploading(false);
+    }
+  }
 
-    setDraft({
-      ...draft,
+  function handleMoveSticker(face: "front" | "back", id: string, x: number, y: number) {
+    setDraft((prev) => ({
+      ...prev,
       card_stickers: {
-        ...draft.card_stickers,
-        [face]: clampCardStickers(
-          [...current, { id: activeStickerId, x, y, scale: 1, rotation: 0 }],
-          face
+        ...prev.card_stickers,
+        [face]: prev.card_stickers[face].map((s) =>
+          s.id === id ? { ...s, x, y } : s
         ),
       },
-    });
+    }));
   }
 
-  function handleRemoveSticker(face: "front" | "back", index: number) {
-    const next = [...draft.card_stickers[face]];
-    next.splice(index, 1);
-    setDraft({
-      ...draft,
+  function handleScaleSticker(face: "front" | "back", id: string, scale: number) {
+    setDraft((prev) => ({
+      ...prev,
       card_stickers: {
-        ...draft.card_stickers,
-        [face]: next,
+        ...prev.card_stickers,
+        [face]: prev.card_stickers[face].map((s) =>
+          s.id === id ? { ...s, scale } : s
+        ),
       },
-    });
+    }));
   }
 
-  if (!ready || loading) {
+  function handleRotateSticker(face: "front" | "back", id: string, rotation: number) {
+    setDraft((prev) => ({
+      ...prev,
+      card_stickers: {
+        ...prev.card_stickers,
+        [face]: prev.card_stickers[face].map((s) =>
+          s.id === id ? { ...s, rotation } : s
+        ),
+      },
+    }));
+  }
+
+  async function handleRemoveSticker(face: "front" | "back", id: string) {
+    const sticker = draft.card_stickers[face].find((s) => s.id === id);
+    if (sticker) {
+      const { error } = await deleteCardSticker(sticker.storage_path);
+      if (error) {
+        setSaveMessage("ลบไม่สำเร็จ กรุณาลองอีกครั้ง");
+        return;
+      }
+    }
+    setDraft((prev) => ({
+      ...prev,
+      card_stickers: {
+        ...prev.card_stickers,
+        [face]: prev.card_stickers[face].filter((s) => s.id !== id),
+      },
+    }));
+  }
+
+  if (!ready || (loading && !profile)) {
     return <ProfileSkeleton />;
   }
 
@@ -167,14 +283,13 @@ export default function ProfilePage() {
     );
   }
 
-  const showEmail = draft.privacy_settings.show_email;
-  const profileWithEmail = { ...profile, email };
+  const profileWithEmail = { ...profile, email, bio: draftBio };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section
         className={cn(
-          "flex shrink-0 items-center justify-center border-b border-slate-100 bg-slate-50/50 p-4 lg:w-[45%] lg:border-b-0 lg:border-r",
+          "flex shrink-0 items-center justify-center overflow-visible border-b border-slate-100 bg-slate-50/50 p-4 lg:w-[45%] lg:border-b-0 lg:border-r",
           section !== "customize" && "py-6"
         )}
       >
@@ -182,12 +297,12 @@ export default function ProfilePage() {
           profile={profileWithEmail}
           customization={draft}
           editMode={section === "customize"}
-          activeStickerId={activeStickerId}
           activeFace={activeFace}
           onActiveFaceChange={setActiveFace}
-          onPlaceSticker={handlePlaceSticker}
+          onMoveSticker={handleMoveSticker}
+          onScaleSticker={handleScaleSticker}
+          onRotateSticker={handleRotateSticker}
           onRemoveSticker={handleRemoveSticker}
-          showEmail={showEmail}
           compact={section !== "customize"}
         />
       </section>
@@ -195,34 +310,21 @@ export default function ProfilePage() {
       <section className="min-h-0 flex-1 lg:w-[55%]">
         {section === "customize" && (
           <CustomizePanel
-            profile={profileWithEmail}
             draft={draft}
+            bio={draftBio}
+            onBioChange={setDraftBio}
             onChange={setDraft}
             onSave={() => void handleSave()}
-            onReset={handleReset}
-            saving={saving}
-            saveMessage={saveMessage}
-            activeStickerId={activeStickerId}
-            onActiveStickerIdChange={setActiveStickerId}
-          />
-        )}
-        {section === "privacy" && (
-          <PrivacyPanel
-            draft={draft}
-            onPrivacyChange={(show_email) =>
-              setDraft({
-                ...draft,
-                privacy_settings: { show_email },
-              })
-            }
-            email={email}
-            onSave={() => void handleSave()}
+            onReset={() => void handleReset()}
+            onUploadSticker={(file) => handleUploadSticker(activeFace, file)}
+            uploading={uploading}
             saving={saving}
             saveMessage={saveMessage}
           />
         )}
+        {section === "privacy" && <PrivacyPanel email={email} />}
         {section === "account" && (
-          <AccountPanel profile={profileWithEmail} email={email} showEmail={showEmail} />
+          <AccountPanel profile={profileWithEmail} email={email} />
         )}
       </section>
     </div>

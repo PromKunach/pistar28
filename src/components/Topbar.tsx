@@ -11,6 +11,10 @@ import {
   Settings,
   MessageSquare,
   UserX,
+  FileText,
+  Folder,
+  Images,
+  Wrench,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
@@ -287,22 +291,30 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
                     icon={UserCircle}
                     onClick={() => setMenuOpen(false)}
                   >
-                    Profile
+                    โปรไฟล์
+                  </MenuItem>
+                  <MenuItem
+                    href="/files"
+                    icon={Folder}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    ไฟล์
+                  </MenuItem>
+                  <MenuItem
+                    href="/tools"
+                    icon={Wrench}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    เครื่องมือ
                   </MenuItem>
                   <MenuItem
                     href="#"
                     icon={Settings}
                     onClick={() => setMenuOpen(false)}
                   >
-                    Account setting
+                    ตั้งค่าบัญชี
                   </MenuItem>
-                  <MenuItem
-                    href="#"
-                    icon={MessageSquare}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Message box
-                  </MenuItem>
+                
                 </div>
 
                 <div className="border-t border-slate-100 p-1.5">

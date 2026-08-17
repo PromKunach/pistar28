@@ -779,6 +779,31 @@ export function recordToBoardContent(record: AnnouncementBoardRecord): BoardCont
   }
 }
 
+function collectLinkedAppointmentIds(
+  rows: Array<{ connections: unknown }>
+): Set<string> {
+  const ids = new Set<string>()
+  for (const row of rows) {
+    for (const connection of normalizeConnections(row.connections)) {
+      if (connection.appointmentId) {
+        ids.add(connection.appointmentId)
+      }
+    }
+  }
+  return ids
+}
+
+export async function fetchLinkedAppointmentIds(): Promise<Set<string>> {
+  const { data, error } = await supabase.from("announcement_boards").select("connections")
+  if (error) throw error
+  return collectLinkedAppointmentIds(data ?? [])
+}
+
+export async function isAppointmentLinkedOnBoard(appointmentId: string): Promise<boolean> {
+  const linkedIds = await fetchLinkedAppointmentIds()
+  return linkedIds.has(appointmentId)
+}
+
 export async function fetchBoard(
   announcementId: string
 ): Promise<AnnouncementBoardRecord | null> {

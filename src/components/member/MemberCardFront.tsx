@@ -1,7 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import type { ProfileCustomization } from "@/lib/profileCustomization";
+import type { CardStickerEditProps } from "./cardStickerTypes";
+import { CardStickerEditor } from "./CardStickerEditor";
 import { CardStickerLayer } from "./CardStickerLayer";
 import { CrossfadeImage } from "./CrossfadeImage";
 import type { MemberProfile } from "./types";
@@ -9,28 +12,25 @@ import type { MemberProfile } from "./types";
 export function MemberCardFront({
   profile,
   customization,
-  editable = false,
+  stickerEdit,
 }: {
   profile: MemberProfile;
   customization: ProfileCustomization;
-  editable?: boolean;
-  activeFace?: "front" | "back";
-  onPlaceSticker?: (x: number, y: number) => void;
+  stickerEdit?: CardStickerEditProps;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
   return (
     <div
-      className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] p-3.5 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.55)] ring-1 ring-black/20 sm:p-5"
+      ref={cardRef}
+      className="relative flex h-full w-full flex-col overflow-visible rounded-[1.75rem] p-3.5 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.55)] ring-1 ring-black/20 sm:p-5"
       style={{
         backgroundColor: customization.card_color,
         color: customization.card_text_color,
       }}
     >
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl ring-1 ring-current/10">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
         <CrossfadeImage src={profile.url} alt={profile.full_name_th} />
-        <CardStickerLayer
-          stickers={customization.card_stickers.front}
-          editable={editable}
-        />
         <span className="absolute bottom-2 right-2 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-semibold tracking-normal text-white/90 backdrop-blur-sm sm:bottom-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs">
           #{profile.id}
         </span>
@@ -49,7 +49,11 @@ export function MemberCardFront({
         </Link>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-current/10" />
+      {stickerEdit ? (
+        <CardStickerEditor containerRef={cardRef} {...stickerEdit} />
+      ) : (
+        <CardStickerLayer stickers={customization.card_stickers.front} />
+      )}
     </div>
   );
 }

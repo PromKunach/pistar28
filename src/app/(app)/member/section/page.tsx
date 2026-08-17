@@ -129,7 +129,7 @@ function getRoleLabel(profile: Profile, sectionId: string, headId?: string): Rol
 }
 
 const SECTION_DESCRIPTIONS: Record<string, string> = {
-  Management: "ดูแลภาพรวมการทำงานของสภานักศึกษา วางแผน ตัดสินใจ และประสานงานทุกฝ่าย",
+  Management: "ดูแลภาพรวมการทำงานของสภานักศึกษา วางแผน ตัดสินใจ และประสานงานทุกฝ่าย ตัดสินใจ และประสานงานทุกฝ่าย",
   Academic: "ดูแลกิจกรรมด้านวิชาการ ติวสอบ และส่งเสริมการเรียนรู้ของนักศึกษา",
   Place: "จัดเตรียมสถานที่ อุปกรณ์ และดูแลความเรียบร้อยของงานทุกกิจกรรม",
   Entertainment: "สร้างความสนุกสนาน ดูแลเกมและกิจกรรมสันทนาการในงานต่าง ๆ",
@@ -363,52 +363,24 @@ function DockButton({
   onClick: () => void;
   axis: "x" | "y";
 }) {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (!isSelected) {
-      setShow(false);
-      return;
-    }
-    setShow(false);
-    const id = requestAnimationFrame(() => setShow(true));
-    return () => cancelAnimationFrame(id);
-  }, [isSelected]);
-
   return (
-    <div className="relative">
+    <div className="relative flex flex-col items-center">
       <button
         type="button"
         onClick={onClick}
         aria-label={label}
+        aria-current={isSelected ? "true" : undefined}
         className={cn(
-          "shadow-md flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ease-out",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-md transition-all duration-300 ease-out sm:h-12 sm:w-12",
           isSelected
             ? "scale-110 border-slate-900 bg-black text-white shadow-lg"
             : axis === "y"
-            ? "scale-100 border-slate-200 bg-white text-slate-500 hover:translate-x-1 hover:border-slate-400 hover:text-slate-900"
-            : "scale-100 border-slate-200 bg-white text-slate-500 hover:-translate-y-1 hover:border-slate-400 hover:text-slate-900"
+              ? "scale-100 border-slate-200 bg-white text-slate-500 hover:translate-x-0.5 hover:border-slate-400 hover:text-slate-900"
+              : "scale-100 border-slate-200 bg-white text-slate-500 hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900"
         )}
       >
         <Icon className="h-5 w-5" />
       </button>
-
-      {isSelected && (
-        <div
-          className={cn(
-            "pointer-events-none absolute z-10 whitespace-nowrap rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-md ring-1 ring-black-300 transition-all duration-300 ease-out lg:inline hidden",
-            axis === "y"
-              ? "left-full top-1/2 ml-3 -translate-y-1/2"
-              : "bottom-full left-1/2 mb-3 -translate-x-1/2",
-            show
-              ? "opacity-100 " + (axis === "y" ? "translate-x-5" : "translate-y-0")
-              : "opacity-0 " + (axis === "y" ? "-translate-x-1" : "translate-y-1")
-          )}
-        >
-          <div className="bg-black w-10 h-[1px] absolute top-[50%] left-[-42px] hidden lg:inline"></div>
-          {label}
-        </div>
-      )}
     </div>
   );
 }
@@ -628,32 +600,28 @@ function SectionPageContent() {
   }, [orbitMembers, sectionHead, selected.id]);
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden lg:flex-row">
-      {/* Desktop: vertical dock, ~20% */}
-      <aside className="hidden shrink-0 flex-col items-center justify-center gap-4  py-8 lg:flex lg:w-[7%]">
-          <div className="ml-8 shrink-0 flex-col items-center shadow-md justify-center gap-4 p-[18px] w-20 rounded-full   py-8 lg:flex  border-neutral-200 ring-1 ring-slate-300">
-          
+    <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden lg:h-[calc(100dvh-3.5rem)] lg:min-h-0 lg:flex-row">
+      {/* Desktop: vertical dock */}
+      <aside className="hidden shrink-0 flex-col items-center justify-center py-4 pl-2 pr-1 lg:flex lg:w-[5.5rem] xl:w-24">
+        <div className="flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-2 overflow-y-auto rounded-full border border-neutral-200 p-3 shadow-md ring-1 ring-slate-300 no-scrollbar xl:gap-2.5 xl:p-[18px]">
           {SECTIONS.map((s) => (
-          <DockButton
-            key={s.id}
-            icon={s.icon}
-            label={s.label}
-            axis="y"
-            isSelected={s.id === selectedId}
-            onClick={() => selectSection(s.id)}
-          />
-        ))}
-          </div>
-        
+            <DockButton
+              key={s.id}
+              icon={s.icon}
+              label={s.label}
+              axis="y"
+              isSelected={s.id === selectedId}
+              onClick={() => selectSection(s.id)}
+            />
+          ))}
+        </div>
       </aside>
 
-      {/* Right side: content + mobile label + mobile dock, ~80% on desktop */}
-      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-
-        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-
-          <div className="relative flex h-full min-h-[420px] w-full flex-col items-center justify-center overflow-hidden">
+      {/* Main content + mobile controls */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 sm:px-4">
+            <div className="relative flex h-full min-h-[min(72dvh,520px)] w-full max-w-3xl flex-col items-center justify-center overflow-hidden sm:min-h-[min(68dvh,560px)] lg:min-h-[420px] lg:max-w-none">
             {error ? (
               <p className="text-sm text-red-600">{error}</p>
             ) : loading ? (
@@ -828,7 +796,7 @@ function SectionPageContent() {
         </div>
 
         {/* Mobile: open the section detail sheet */}
-        <div className="shrink-0 px-4 pt-8 lg:hidden">
+        <div className="shrink-0 px-4 pb-2 pt-3 sm:pt-4 lg:hidden">
           <button
             type="button"
             onClick={() => setMobilePanelOpen(true)}
@@ -852,23 +820,26 @@ function SectionPageContent() {
           </button>
         </div>
 
-        {/* Mobile: horizontal dock under the content — selected label shows above its button */}
-        <div className="flex shrink-0 items-center gap-3 overflow-x-auto border-slate-200 px-4 pb-4 pt-6 lg:hidden">
-          {SECTIONS.map((s) => (
-            <DockButton
-              key={s.id}
-              icon={s.icon}
-              label={s.label}
-              axis="x"
-              isSelected={s.id === selectedId}
-              onClick={() => selectSection(s.id)}
-            />
-          ))}
+        {/* Mobile: horizontal dock */}
+        <div className="shrink-0 border-t border-slate-100 bg-white/80 backdrop-blur-sm lg:hidden">
+          <div className="flex items-end gap-2 overflow-x-auto px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] no-scrollbar snap-x snap-mandatory">
+            {SECTIONS.map((s) => (
+              <div key={s.id} className="snap-center shrink-0 pb-1">
+                <DockButton
+                  icon={s.icon}
+                  label={s.label}
+                  axis="x"
+                  isSelected={s.id === selectedId}
+                  onClick={() => selectSection(s.id)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Desktop: section detail sidebar, slides in on select */}
-      <aside className="hidden w-[340px] shrink-0 overflow-hidden border-l border-slate-200 bg-white lg:flex lg:flex-col">
+      {/* Desktop: section detail sidebar */}
+      <aside className="hidden w-[min(100%,340px)] shrink-0 overflow-hidden border-l border-slate-200 bg-white lg:flex lg:w-[300px] lg:flex-col xl:w-[340px]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={selected.id}

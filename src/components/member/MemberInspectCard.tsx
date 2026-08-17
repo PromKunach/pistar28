@@ -9,13 +9,11 @@ import type { MemberProfile } from "./types";
 export function MemberInspectCard({
   profile,
   customization,
-  showEmail = false,
   resetKey,
   ariaLabel,
 }: {
   profile: MemberProfile;
   customization: ProfileCustomization;
-  showEmail?: boolean;
   resetKey?: string | number | null;
   ariaLabel?: string;
 }) {
@@ -28,7 +26,6 @@ export function MemberInspectCard({
         <MemberCardBack
           profile={profile}
           customization={customization}
-          showEmail={showEmail}
         />
       }
     />

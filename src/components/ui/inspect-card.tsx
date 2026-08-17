@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
+import { MEMBER_CARD_DIMENSION_CLASS } from "@/components/member/cardDimensions";
 
 const ROTATE_SPRING = { stiffness: 220, damping: 24, mass: 0.6 } as const;
 const LIFT_SPRING = { stiffness: 300, damping: 26, mass: 0.5 } as const;
@@ -225,7 +226,10 @@ export function InspectCard({
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           onKeyDown={handleKeyDown}
-          className="relative h-[22rem] w-[15.5rem] cursor-grab touch-pan-y select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-4 sm:h-[32rem] sm:w-[22.5rem] lg:h-[34rem] lg:w-[24rem]"
+          className={cn(
+            "relative cursor-grab touch-pan-y select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-4",
+            MEMBER_CARD_DIMENSION_CLASS
+          )}
           style={{
             rotateX,
             rotateY,

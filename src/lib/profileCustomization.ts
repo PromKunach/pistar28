@@ -2,6 +2,9 @@ import type { MemberProfile } from "@/components/member/types";
 
 export type CardSticker = {
   id: string;
+  url: string;
+  storage_path: string;
+  size_bytes: number;
   x: number;
   y: number;
   scale: number;
@@ -40,7 +43,19 @@ export const DEFAULT_CUSTOMIZATION: ProfileCustomization = {
   privacy_settings: { show_email: false },
 };
 
-const SELECTOR_SLOTS = new Set(["top", "right", "bottom", "left"]);
+export const PROFILE_BIO_MAX_LENGTH = 160;
+
+export function normalizeBio(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.trim().slice(0, PROFILE_BIO_MAX_LENGTH);
+}
+
+export const STICKER_MIN_SCALE = 0.3;
+export const STICKER_MAX_SCALE = 4;
+
+export function clampStickerScale(value: number): number {
+  return Math.min(STICKER_MAX_SCALE, Math.max(STICKER_MIN_SCALE, value));
+}
 
 function normalizeHex(value: unknown, fallback: string): string {
   if (typeof value !== "string") return fallback;
@@ -53,15 +68,34 @@ function normalizeHex(value: unknown, fallback: string): string {
   return HEX_RE.test(withHash) ? withHash : fallback;
 }
 
+function clampPosition(value: unknown): number {
+  if (typeof value !== "number") return 0.5;
+  return Math.min(1.5, Math.max(-0.5, value));
+}
+
 function normalizeCardSticker(raw: unknown): CardSticker | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   if (typeof o.id !== "string") return null;
-  const x = typeof o.x === "number" ? Math.min(1, Math.max(0, o.x)) : 0.5;
-  const y = typeof o.y === "number" ? Math.min(1, Math.max(0, o.y)) : 0.5;
-  const scale = typeof o.scale === "number" ? Math.min(2, Math.max(0.3, o.scale)) : 1;
+  if (typeof o.url !== "string" || !o.url.trim()) return null;
+  if (typeof o.storage_path !== "string" || !o.storage_path.trim()) return null;
+  const size_bytes = typeof o.size_bytes === "number" && o.size_bytes > 0 ? o.size_bytes : 0;
+  if (size_bytes === 0) return null;
+
+  const scale =
+    typeof o.scale === "number" ? clampStickerScale(o.scale) : 1;
   const rotation = typeof o.rotation === "number" ? o.rotation : 0;
-  return { id: o.id, x, y, scale, rotation };
+
+  return {
+    id: o.id,
+    url: o.url,
+    storage_path: o.storage_path,
+    size_bytes,
+    x: clampPosition(o.x),
+    y: clampPosition(o.y),
+    scale,
+    rotation,
+  };
 }
 
 function normalizeSelectorSticker(raw: unknown): SelectorSticker | null {
@@ -77,7 +111,7 @@ export function clampCardStickers(
   stickers: CardSticker[],
   _face: "front" | "back"
 ): CardSticker[] {
-  return stickers.slice(0, 5);
+  return stickers;
 }
 
 export function clampSelectorStickers(stickers: SelectorSticker[]): SelectorSticker[] {
@@ -139,7 +173,7 @@ export function normalizeCustomization(raw: unknown): ProfileCustomization {
 }
 
 export const CUSTOMIZATION_SELECT =
-  "id, full_name_th, nickname_th, pbri_id, section, complete_name_th, card_color, card_text_color, card_stickers, selector_stickers, privacy_settings";
+  "id, full_name_th, nickname_th, pbri_id, section, complete_name_th, card_color, card_text_color, card_stickers, selector_stickers, privacy_settings, bio";
 
 const PFP_COUNT = 32;
 
@@ -157,6 +191,16 @@ export function buildCustomizationUpdatePayload(customization: ProfileCustomizat
     card_stickers: customization.card_stickers,
     selector_stickers: customization.selector_stickers,
     privacy_settings: customization.privacy_settings,
+  };
+}
+
+export function buildProfileSavePayload(
+  customization: ProfileCustomization,
+  bio: string
+) {
+  return {
+    ...buildCustomizationUpdatePayload(customization),
+    bio: normalizeBio(bio),
   };
 }
 
@@ -201,6 +245,7 @@ export async function fetchProfileByAuthEmail(
     section: row.section ?? "",
     url,
     email,
+    bio: normalizeBio(row.bio),
   };
 
   return {
@@ -212,12 +257,13 @@ export async function fetchProfileByAuthEmail(
 
 export async function saveProfileCustomization(
   profileId: string,
-  customization: ProfileCustomization
+  customization: ProfileCustomization,
+  bio: string
 ): Promise<{ error: string | null }> {
   const { supabase } = await import("@/lib/supabaseClient");
   const { error } = await supabase
     .from("profiles")
-    .update(buildCustomizationUpdatePayload(customization))
+    .update(buildProfileSavePayload(customization, bio))
     .eq("id", profileId);
 
   return { error: error?.message ?? null };

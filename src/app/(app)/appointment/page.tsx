@@ -26,11 +26,13 @@ import {
   createAppointmentsFromDraft,
   deleteAppointment,
   fetchAppointmentsForMonth,
+  isBoardSourcedAppointment,
   updateAppointment,
   type AppointmentDraft,
   type AppointmentEditDraft,
   type AppointmentRecord,
 } from "@/lib/appointments"
+import { isAppointmentLinkedOnBoard } from "@/lib/announcementBoard"
 import { useCurrentUser } from "@/lib/userProfile"
 import {
   fetchSavedAppointmentTags,
@@ -396,6 +398,20 @@ export default function AppointmentPage() {
         throw new Error("กรุณาเข้าสู่ระบบก่อนลบนัดหมาย")
       }
 
+      const record = appointments.find((item) => item.id === id)
+      if (record && isBoardSourcedAppointment(record)) {
+        try {
+          const stillLinked = await isAppointmentLinkedOnBoard(id)
+          if (stillLinked) {
+            throw new Error("นัดหมายนี้มาจากบอร์ด — ลบได้ที่หน้าบอร์ดประกาศเท่านั้น")
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("มาจากบอร์ด")) {
+            throw error
+          }
+        }
+      }
+
       try {
         await deleteAppointment(id)
         await reloadAppointments()
@@ -403,7 +419,7 @@ export default function AppointmentPage() {
         throw new Error(appointmentSaveErrorMessage(error))
       }
     },
-    [user, reloadAppointments]
+    [user, reloadAppointments, appointments]
   )
 
   const shiftMonth = (delta: number) => {

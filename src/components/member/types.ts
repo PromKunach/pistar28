@@ -6,4 +6,5 @@ export type MemberProfile = {
   section: string;
   url: string;
   email?: string;
+  bio: string;
 };

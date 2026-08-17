@@ -5,76 +5,53 @@ import { Trash2 } from "lucide-react";
 import { MemberInspectCard } from "@/components/member/MemberInspectCard";
 import { MemberCardBack } from "@/components/member/MemberCardBack";
 import { MemberCardFront } from "@/components/member/MemberCardFront";
-import { CardStickerLayer } from "@/components/member/CardStickerLayer";
+import { MEMBER_CARD_DIMENSION_CLASS } from "@/components/member/cardDimensions";
 import type { MemberProfile } from "@/components/member/types";
-import type { CardSticker, ProfileCustomization } from "@/lib/profileCustomization";
+import type { ProfileCustomization } from "@/lib/profileCustomization";
 import { cn } from "@/lib/utils";
 
 export function ProfileCardPreview({
   profile,
   customization,
   editMode = false,
-  activeStickerId,
   activeFace,
   onActiveFaceChange,
-  onPlaceSticker,
+  onMoveSticker,
+  onScaleSticker,
+  onRotateSticker,
   onRemoveSticker,
-  showEmail = false,
   compact = false,
 }: {
   profile: MemberProfile;
   customization: ProfileCustomization;
   editMode?: boolean;
-  activeStickerId?: string | null;
   activeFace?: "front" | "back";
   onActiveFaceChange?: (face: "front" | "back") => void;
-  onPlaceSticker?: (face: "front" | "back", x: number, y: number) => void;
-  onRemoveSticker?: (face: "front" | "back", index: number) => void;
-  showEmail?: boolean;
+  onMoveSticker?: (face: "front" | "back", id: string, x: number, y: number) => void;
+  onScaleSticker?: (face: "front" | "back", id: string, scale: number) => void;
+  onRotateSticker?: (face: "front" | "back", id: string, rotation: number) => void;
+  onRemoveSticker?: (face: "front" | "back", id: string) => Promise<void>;
   compact?: boolean;
 }) {
   const [internalFace, setInternalFace] = useState<"front" | "back">("front");
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const face = activeFace ?? internalFace;
   const setFace = onActiveFaceChange ?? setInternalFace;
-
-  function handleCardClick(event: React.MouseEvent<HTMLDivElement>) {
-    if (!editMode) return;
-
-    const target = event.target as HTMLElement;
-    if (target.closest("[data-sticker]")) return;
-
-    if (!activeStickerId) return;
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
-    onPlaceSticker?.(face, x, y);
-    setSelectedIndex(null);
-  }
-
-  function handleStickerClick(index: number, event: React.MouseEvent) {
-    if (!editMode) return;
-    event.stopPropagation();
-    setSelectedIndex(index);
-  }
 
   const stickers =
     face === "front"
       ? customization.card_stickers.front
       : customization.card_stickers.back;
 
-  const displayCustomization: ProfileCustomization =
-    editMode
-      ? {
-          ...customization,
-          card_stickers: {
-            front: face === "front" ? [] : customization.card_stickers.front,
-            back: face === "back" ? [] : customization.card_stickers.back,
-          },
-        }
-      : customization;
+  const stickerEdit = {
+    stickers,
+    selectedId,
+    onSelect: setSelectedId,
+    onMove: (id: string, x: number, y: number) => onMoveSticker?.(face, id, x, y),
+    onScale: (id: string, scale: number) => onScaleSticker?.(face, id, scale),
+    onRotate: (id: string, rotation: number) => onRotateSticker?.(face, id, rotation),
+  };
 
   if (!editMode) {
     return (
@@ -83,7 +60,6 @@ export function ProfileCardPreview({
           resetKey={profile.id}
           profile={profile}
           customization={customization}
-          showEmail={showEmail}
           ariaLabel={`ตัวอย่างการ์ดของ ${profile.full_name_th}`}
         />
       </div>
@@ -99,7 +75,7 @@ export function ProfileCardPreview({
             type="button"
             onClick={() => {
               setFace(side);
-              setSelectedIndex(null);
+              setSelectedId(null);
             }}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
@@ -114,39 +90,34 @@ export function ProfileCardPreview({
       </div>
 
       <div
-        className="relative h-[22rem] w-[15.5rem] cursor-crosshair sm:h-[28rem] sm:w-[20rem]"
-        onClick={handleCardClick}
+        className={cn("relative overflow-visible select-none", MEMBER_CARD_DIMENSION_CLASS)}
+        onPointerDown={(e) => {
+          if (!(e.target as HTMLElement).closest("[data-sticker]")) {
+            setSelectedId(null);
+          }
+        }}
       >
         {face === "front" ? (
-          <MemberCardFront profile={profile} customization={displayCustomization} editable />
+          <MemberCardFront
+            profile={profile}
+            customization={customization}
+            stickerEdit={stickerEdit}
+          />
         ) : (
           <MemberCardBack
             profile={profile}
-            customization={displayCustomization}
-            showEmail={showEmail}
+            customization={customization}
+            stickerEdit={stickerEdit}
           />
-        )}
-
-        {editMode && (
-          <div className="pointer-events-none absolute inset-0">
-            {stickers.map((sticker, index) => (
-              <EditableSticker
-                key={`${sticker.id}-${index}-${sticker.x}-${sticker.y}`}
-                sticker={sticker}
-                selected={selectedIndex === index}
-                onClick={(e) => handleStickerClick(index, e)}
-              />
-            ))}
-          </div>
         )}
       </div>
 
-      {selectedIndex !== null && editMode && (
+      {selectedId !== null && (
         <button
           type="button"
           onClick={() => {
-            onRemoveSticker?.(face, selectedIndex);
-            setSelectedIndex(null);
+            void onRemoveSticker?.(face, selectedId);
+            setSelectedId(null);
           }}
           className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100"
         >
@@ -156,38 +127,8 @@ export function ProfileCardPreview({
       )}
 
       <p className="text-center text-xs text-slate-500">
-        {activeStickerId
-          ? "คลิกบนการ์ดเพื่อวางสติกเกอร์"
-          : "เลือกสติกเกอร์จากคลังด้านล่าง"}
+        ลากเพื่อย้าย · จุดมุมเพื่อปรับขนาด · จุดบนเพื่อหมุน · กดลบเพื่อนำออก
       </p>
-    </div>
-  );
-}
-
-function EditableSticker({
-  sticker,
-  selected,
-  onClick,
-}: {
-  sticker: CardSticker;
-  selected: boolean;
-  onClick: (e: React.MouseEvent) => void;
-}) {
-  return (
-    <div
-      data-sticker
-      className="pointer-events-auto absolute z-30"
-      style={{
-        left: `${sticker.x * 100}%`,
-        top: `${sticker.y * 100}%`,
-        transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
-      }}
-      onClick={onClick}
-    >
-      <CardStickerLayer stickers={[sticker]} editable />
-      {selected && (
-        <span className="absolute -inset-2 rounded-full border-2 border-dashed border-slate-900" />
-      )}
     </div>
   );
 }

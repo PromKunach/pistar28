@@ -31,16 +31,25 @@ export default function BillSplitterPage() {
     { id: crypto.randomUUID(), name: "" },
     { id: crypto.randomUUID(), name: "" },
   ]);
+  const [overallTotal, setOverallTotal] = useState("");
   const [dishes, setDishes] = useState<BillDish[]>([]);
   const [vatPercent, setVatPercent] = useState("7");
   const [roundMode, setRoundMode] = useState<RoundMode>("none");
   const [result, setResult] = useState<ItemizedBillResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const foodSubtotal = useMemo(
+  const assignedTotal = useMemo(
     () => dishes.reduce((sum, dish) => sum + dish.price, 0),
     [dishes]
   );
+
+  const parsedOverallTotal = Number(overallTotal);
+  const remainder = useMemo(() => {
+    if (!Number.isFinite(parsedOverallTotal) || parsedOverallTotal <= 0) {
+      return null;
+    }
+    return Math.max(0, parsedOverallTotal - assignedTotal);
+  }, [parsedOverallTotal, assignedTotal]);
 
   const addPerson = () => {
     setPeople((current) => [
@@ -81,6 +90,7 @@ export default function BillSplitterPage() {
     const validationError = validateItemizedBillInput({
       people,
       dishes,
+      overallTotal: parsedOverallTotal,
       vatPercent: Number(vatPercent),
       roundMode,
     });
@@ -92,6 +102,7 @@ export default function BillSplitterPage() {
     const calculated = calculateItemizedBill({
       people,
       dishes,
+      overallTotal: parsedOverallTotal,
       vatPercent: Number(vatPercent),
       roundMode,
     });
@@ -104,10 +115,45 @@ export default function BillSplitterPage() {
       <div className="mx-auto max-w-[800px] px-4 py-6">
         <ToolPageHeader
           title="แบ่งบิล"
-          description="แบ่งบิลตามเมนูและ VAT"
+          description="ใส่ยอดบิล หักเมนู แล้วแบ่งส่วนที่เหลือ"
         />
 
-        <section className="space-y-3">
+        <section className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Label htmlFor="bill-overall">ยอดรวมบิล (บาท)</Label>
+            <Input
+              id="bill-overall"
+              type="number"
+              min={0}
+              step="0.01"
+              value={overallTotal}
+              onChange={(e) => {
+                setOverallTotal(e.target.value);
+                setResult(null);
+                setError(null);
+              }}
+              placeholder="เช่น 1500"
+            />
+          </div>
+          <div className="w-full shrink-0 space-y-2 sm:w-28">
+            <Label htmlFor="bill-vat">VAT (%)</Label>
+            <Input
+              id="bill-vat"
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              value={vatPercent}
+              onChange={(e) => {
+                setVatPercent(e.target.value);
+                setResult(null);
+                setError(null);
+              }}
+            />
+          </div>
+        </section>
+
+        <section className="mt-8 space-y-3">
           <h2 className="text-lg font-semibold text-slate-900">คน</h2>
           <div className="space-y-2">
             {people.map((person, index) => (
@@ -135,7 +181,7 @@ export default function BillSplitterPage() {
         </section>
 
         <section className="mt-8 space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">เมนู</h2>
+          <h2 className="text-lg font-semibold text-slate-900">เมนูที่ไม่ได้กินทุกคน (ถ้ามี)</h2>
           <div className="space-y-2">
             {dishes.map((dish) => (
               <DishRow
@@ -162,48 +208,34 @@ export default function BillSplitterPage() {
           <Button type="button" variant="outline" size="sm" onClick={addDish}>
             + เพิ่มเมนู
           </Button>
-          <p className="text-sm text-slate-600">
-            รวมอาหาร: {foodSubtotal.toLocaleString("th-TH")} บาท
-          </p>
+          <div className="space-y-1 text-sm text-slate-600">
+            <p>รวมเมนูที่ไม่ได้กินทุกคน: {assignedTotal.toLocaleString("th-TH")} บาท</p>
+            {remainder !== null ? (
+              <p>
+                คงเหลือที่ต้องหารเท่ากัน: {remainder.toLocaleString("th-TH")} บาท
+              </p>
+            ) : null}
+          </div>
         </section>
 
-        <section className="mt-8 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="bill-vat">VAT (%)</Label>
-            <Input
-              id="bill-vat"
-              type="number"
-              min={0}
-              max={100}
-              step="0.01"
-              value={vatPercent}
-              onChange={(e) => {
-                setVatPercent(e.target.value);
-                setResult(null);
-                setError(null);
-              }}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bill-round">ปัดเศษ</Label>
-            <select
-              id="bill-round"
-              value={roundMode}
-              onChange={(e) => {
-                setRoundMode(e.target.value as RoundMode);
-                setResult(null);
-                setError(null);
-              }}
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-            >
-              {ROUND_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <section className="mt-8 space-y-2">
+          <Label htmlFor="bill-round">ปัดเศษ</Label>
+          <select
+            id="bill-round"
+            value={roundMode}
+            onChange={(e) => {
+              setRoundMode(e.target.value as RoundMode);
+              setResult(null);
+              setError(null);
+            }}
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+          >
+            {ROUND_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </section>
 
         <div className="mt-6">

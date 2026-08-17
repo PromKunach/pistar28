@@ -12,9 +12,7 @@ import {
   PanelLeftClose,
   Users,
   Loader,
-  FileText,
   CalendarDays,
-  Images,
   Phone,
   Pin,
 } from "lucide-react";
@@ -100,40 +98,8 @@ const NAV_TOP: NavItem[] = [
   { label: "ฟีดข่าวสาร", icon: Loader, href: "/news" },
 ];
 
-const NAV_OBSERVE: NavItem[] = [
-  {
-    label: "เอกสารต่างๆ",
-    icon: FileText,
-    expandable: true,
-    href: "/files",
-    children: [
-      { label: "เอกสารทั้งหมด", href: "/files" },
-      { label: "อัปโหลดใหม่", href: "/files/upload" },
-    ],
-  },
-  {
-    label: "อัลบั้มภาพ",
-    icon: Images,
-    expandable: true,
-    href: "/album",
-    children: [
-      { label: "อัลบั้มทั้งหมด", href: "/album" },
-      { label: "เพิ่มรูปภาพ", href: "/album/upload" },
-    ],
-  },
-];
-
 const NAV_BUILD: NavItem[] = [
-  {
-    label: "เครื่องมือ",
-    icon: Wrench,
-    expandable: true,
-    href: "/tools",
-    children: [
-      { label: "Cursor", href: "https://cursor.com/dashboard/spending" },
-      { label: "Supabase", href: "https://supabase.com/dashboard/project/suqeemkfbmbslgfkqvph" },
-    ],
-  },
+  
   {
     label: "ติดต่อ",
     icon: Phone,
@@ -152,7 +118,6 @@ const NAV_BUILD: NavItem[] = [
 
 const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
   { items: NAV_TOP },
-  { title: "คลังข้อมูล", items: NAV_OBSERVE },
   { title: "อื่นๆ", items: NAV_BUILD },
 ];
 
@@ -212,7 +177,7 @@ export default function Sidebar({
           </div>
 
           <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
-            version : 1.5.1
+            version : 1.6.0
           </span>
           <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
 

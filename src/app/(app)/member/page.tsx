@@ -11,6 +11,7 @@ import { AvatarSelectorItem } from "@/components/member/AvatarSelectorItem";
 import { MemberInspectCard } from "@/components/member/MemberInspectCard";
 import type { MemberProfile } from "@/components/member/types";
 import {
+  normalizeBio,
   normalizeCustomization,
   type ProfileCustomization,
 } from "@/lib/profileCustomization";
@@ -73,8 +74,6 @@ function MemberDetailPanel({
 
   const isOwnProfile =
     Boolean(authStudentId) && selectedProfile.pbri_id === authStudentId;
-  const showEmail =
-    isOwnProfile && selectedProfile.customization.privacy_settings.show_email;
   const profileWithEmail =
     isOwnProfile && authEmail
       ? { ...selectedProfile, email: authEmail }
@@ -86,7 +85,6 @@ function MemberDetailPanel({
         resetKey={selectedProfile.id}
         profile={profileWithEmail}
         customization={selectedProfile.customization}
-        showEmail={showEmail}
         ariaLabel={`การ์ดของ ${selectedProfile.full_name_th} — ลากเพื่อหมุน คลิกเพื่อพลิก`}
       />
     </div>
@@ -391,7 +389,7 @@ function MemberPageContent() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, complete_name_th, pbri_id, nickname_th, section, full_name_th, card_color, card_text_color, card_stickers, selector_stickers, privacy_settings"
+          "id, complete_name_th, pbri_id, nickname_th, section, full_name_th, card_color, card_text_color, card_stickers, selector_stickers, privacy_settings, bio"
         )
         .order("id", { ascending: true });
 
@@ -407,6 +405,7 @@ function MemberPageContent() {
           pbri_id: String(row.pbri_id ?? ""),
           section: row.section ?? "",
           url: getPfpUrl(i),
+          bio: normalizeBio(row.bio),
           customization: normalizeCustomization(row),
         }));
         setProfiles(withImages);
@@ -513,7 +512,7 @@ function MemberPageContent() {
         </InertialScrollArea>
       </section>
 
-      <InertialScrollArea className="order-1 smooth-scrollbar min-h-0 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
+      <InertialScrollArea className="order-1 no-scrollbar min-h-0 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
         {selectedId ? (
           <MemberDetailPanel
             profiles={profiles}

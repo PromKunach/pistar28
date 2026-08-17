@@ -195,6 +195,12 @@ function boardSourceLabelFromRecord(record: Pick<AppointmentRecord, "title" | "d
   )
 }
 
+export function isBoardSourcedAppointment(
+  record: Pick<AppointmentRecord, "title" | "description">
+) {
+  return Boolean(boardSourceLabelFromRecord(record))
+}
+
 export async function fetchAppointmentById(id: string) {
   const { data, error } = await supabase.from("appointments").select("*").eq("id", id).single()
   if (error) throw error

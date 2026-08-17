@@ -2,12 +2,11 @@
 
 import { cn } from "@/lib/utils";
 import type { ProfileCustomization } from "@/lib/profileCustomization";
-import { SelectorStickerRing } from "./SelectorStickerRing";
 import type { MemberProfile } from "./types";
 
 export function AvatarSelectorItem({
   profile,
-  customization,
+  customization: _customization,
   isSelected,
   onClick,
   buttonRef,
@@ -33,7 +32,6 @@ export function AvatarSelectorItem({
       aria-label={profile.full_name_th}
     >
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full sm:h-16 sm:w-16">
-        <SelectorStickerRing stickers={customization.selector_stickers} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={profile.url}
