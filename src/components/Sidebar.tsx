@@ -243,7 +243,6 @@ export default function Sidebar({
         </div>
 
         {/* Quick search */}
-        <div className="w-[90%] h-[36px] bg-slate-100 text-slate-500 text-sm flex items-center rounded-full shadow-md justify-center mx-auto ring-1 ring-slate-200 mt-4">version : beta 1</div>
 
         {/* Nav sections */}
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 font-sans no-scrollbar">
