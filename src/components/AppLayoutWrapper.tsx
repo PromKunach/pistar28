@@ -1,18 +1,27 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import { cn } from "@/lib/utils";
 const NO_LAYOUT_ROUTES = ["/login", "/onboarding", "/profile"];
+const TABLET_MAX_WIDTH = 1279;
+
 export default function AppLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false); // mobile drawer
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false); // desktop rail collapse
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+
+  useEffect(() => {
+    const width = window.innerWidth;
+    if (width >= 768 && width <= TABLET_MAX_WIDTH) {
+      setDesktopCollapsed(true);
+    }
+  }, []);
   if (NO_LAYOUT_ROUTES.includes(pathname)) {
     return <>{children}</>;
   }

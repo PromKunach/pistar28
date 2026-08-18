@@ -212,7 +212,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   return (
     <header className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
       <button
-        className="lg:hidden"
+        className="md:hidden"
         onClick={onOpenSidebar}
         aria-label="Open menu"
       >

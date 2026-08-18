@@ -174,9 +174,8 @@ export default function Sidebar({
   onToggleDesktop,
 }: SidebarProps) {
   const pathname = usePathname();
-  // When collapsed on desktop, add lg:hidden to text/labels so they
-  // vanish at the lg breakpoint but still show normally on the mobile drawer.
-  const labelClass = desktopCollapsed ? "lg:hidden" : "";
+  // When collapsed on md+, hide labels in the icon rail; phone drawer keeps full labels.
+  const labelClass = desktopCollapsed ? "md:hidden" : "";
 
   // Tracks which expandable nav items are currently open, by label
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
@@ -207,7 +206,7 @@ export default function Sidebar({
       {/* Backdrop — mobile only, dims page behind the drawer, click to close */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/20 md:hidden"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
@@ -218,8 +217,8 @@ export default function Sidebar({
           fixed inset-y-0 left-0 z-40 flex h-dvh w-[280px] flex-col border-r border-slate-200 bg-white
           transition-transform duration-200 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:static lg:translate-x-0 lg:transition-[width]
-          ${desktopCollapsed ? "lg:w-[76px]" : "lg:w-[280px]"}
+          md:static md:translate-x-0 md:transition-[width]
+          ${desktopCollapsed ? "md:w-[76px]" : "md:w-[280px]"}
         `}
       >
         {/* Brand / account switcher */}
@@ -234,7 +233,7 @@ export default function Sidebar({
 
           {/* Close button — mobile only */}
           <button
-            className="lg:hidden ml-2"
+            className="md:hidden ml-2"
             onClick={onCloseMobile}
             aria-label="Close menu"
           >
@@ -284,7 +283,7 @@ export default function Sidebar({
                           type="button"
                           onClick={item.opensContact ? openContact : openAbout}
                           className={`group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium ${navItemClass} ${
-                            desktopCollapsed ? "lg:justify-center" : ""
+                            desktopCollapsed ? "md:justify-center" : ""
                           }`}
                           title={desktopCollapsed ? item.label : undefined}
                         >
@@ -297,7 +296,7 @@ export default function Sidebar({
                         <Link
                           href={item.href}
                           className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium ${navItemClass} ${
-                            desktopCollapsed ? "lg:justify-center" : ""
+                            desktopCollapsed ? "md:justify-center" : ""
                           }`}
                           title={desktopCollapsed ? item.label : undefined}
                         >
@@ -347,7 +346,7 @@ export default function Sidebar({
           ))}
         </nav>
 
-        <div className="hidden border-t border-slate-100 p-3 lg:block">
+        <div className="hidden border-t border-slate-100 p-3 md:block">
           <button
             onClick={onToggleDesktop}
             className="flex w-full items-center  gap-2 rounded-lg px-2.5 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
