@@ -41,10 +41,10 @@ export function FeedPostCard({
     : body
 
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted">
             {author?.avatarUrl ? (
               <Image
                 src={author.avatarUrl}
@@ -56,10 +56,10 @@ export function FeedPostCard({
             ) : null}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <p className="truncate text-sm font-semibold text-foreground">
               {author?.displayName ?? post.author_pbri_id}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-muted-foreground">
               {formatFeedPostTime(post.created_at)}
             </p>
           </div>
@@ -80,10 +80,10 @@ export function FeedPostCard({
               <MoreHorizontal className="h-4 w-4" />
             </Button>
             {menuOpen ? (
-              <div className="absolute top-full right-0 z-10 mt-1 min-w-36 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+              <div className="absolute top-full right-0 z-10 mt-1 min-w-36 rounded-xl border border-border bg-popover py-1 text-popover-foreground shadow-lg">
                 <button
                   type="button"
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  className="block w-full px-4 py-2 text-left text-sm hover:bg-muted"
                   onClick={() => {
                     setMenuOpen(false)
                     onEdit(post)
@@ -101,11 +101,11 @@ export function FeedPostCard({
                   </button>
                 ) : (
                   <div className="space-y-1 px-3 py-2">
-                    <p className="text-xs text-neutral-500">ลบโพสต์นี้?</p>
+                    <p className="text-xs text-muted-foreground">ลบโพสต์นี้?</p>
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="text-xs text-neutral-500"
+                        className="text-xs text-muted-foreground"
                         onClick={() => setConfirmDelete(false)}
                       >
                         ยกเลิก
@@ -131,14 +131,14 @@ export function FeedPostCard({
 
       {body ? (
         <div className="mt-3">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
             {displayBody}
           </p>
           {body.length > BODY_PREVIEW_LENGTH ? (
             <button
               type="button"
               onClick={() => setExpanded((current) => !current)}
-              className="mt-1 text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+              className="mt-1 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               {expanded ? "ย่อ" : "ดูเพิ่มเติม"}
             </button>
@@ -152,7 +152,7 @@ export function FeedPostCard({
         </div>
       ) : null}
 
-      <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
+      <p className="mt-3 text-xs text-muted-foreground">
         {formatFeedPostDateTime(post.updated_at !== post.created_at ? post.updated_at : post.created_at)}
       </p>
     </article>

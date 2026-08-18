@@ -147,7 +147,7 @@ const ROLE_STYLES: Record<RoleLabel, string> = {
   เลขานุการ: "bg-violet-100 text-violet-700",
   หัวหน้าฝ่าย: "bg-sky-100 text-sky-700",
   "หัวหน้าฝ่าย(ตัวจริง)": "bg-indigo-100 text-indigo-700",
-  สมาชิก: "bg-slate-100 text-slate-600",
+  สมาชิก: "bg-muted text-muted-foreground",
 };
 
 function SectionPanelContent({
@@ -172,26 +172,26 @@ function SectionPanelContent({
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-400">ฝ่าย</p>
-            <h2 className="truncate text-lg font-semibold leading-tight text-slate-900">
+            <p className="text-xs font-medium text-muted-foreground">ฝ่าย</p>
+            <h2 className="truncate text-lg font-semibold leading-tight text-foreground">
               {section.label}
             </h2>
           </div>
         </div>
 
-        <p className="mt-3 text-sm leading-relaxed text-slate-500">
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {SECTION_DESCRIPTIONS[section.id]}
         </p>
 
-        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
           <Users className="h-3.5 w-3.5" />
           {people.length} คน
         </span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto border-t border-slate-100 px-3 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto border-t border-border px-3 py-3">
         {people.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-slate-400">ยังไม่มีสมาชิกในฝ่ายนี้</p>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">ยังไม่มีสมาชิกในฝ่ายนี้</p>
         ) : (
           <ul className="space-y-1">
             {people.map((person) => {
@@ -199,7 +199,7 @@ function SectionPanelContent({
               return (
                 <li
                   key={person.id}
-                  className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted"
                 >
                   <div className="relative h-11 w-11 shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -208,17 +208,17 @@ function SectionPanelContent({
                       alt={person.full_name_th}
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full rounded-full object-cover ring-1 ring-slate-200"
+                      className="h-full w-full rounded-full object-cover ring-1 ring-border"
                     />
                     {head && person.id === head.id && (
                       <Crown className="absolute -right-1 -top-1.5 h-4 w-4 rotate-12 fill-yellow-400 text-yellow-400" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-900">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {person.full_name_th}
                     </p>
-                    <p className="truncate text-xs text-slate-500">{person.nickname_th}</p>
+                    <p className="truncate text-xs text-muted-foreground">{person.nickname_th}</p>
                   </div>
                   <span
                     className={cn(
@@ -294,11 +294,11 @@ function PersonPopupCard({
         damping: 28,
         mass: 0.8,
       }}
-      className="fixed z-[9999] w-60 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-white px-4 py-3.5 text-center shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)] lg:w-44 lg:px-3 lg:py-2.5 lg:-translate-y-[calc(100%+10px)] xl:w-60 xl:px-4 xl:py-3.5 xl:-translate-y-[calc(100%+14px)]"
+      className="fixed z-[9999] w-60 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-card px-4 py-3.5 text-center shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)] lg:w-44 lg:px-3 lg:py-2.5 lg:-translate-y-[calc(100%+10px)] xl:w-60 xl:px-4 xl:py-3.5 xl:-translate-y-[calc(100%+14px)]"
       onClick={(e) => e.stopPropagation()}
     >
-      <p className="text-xs font-medium text-slate-400 lg:text-[10px] xl:text-xs">{role}</p>
-      <p className="mt-2 text-2xl font-bold leading-tight text-slate-900 lg:mt-1.5 lg:text-lg xl:mt-2 xl:text-2xl" style={{ opacity: 0.85 }}>
+      <p className="text-xs font-medium text-muted-foreground lg:text-[10px] xl:text-xs">{role}</p>
+      <p className="mt-2 text-2xl font-bold leading-tight text-foreground lg:mt-1.5 lg:text-lg xl:mt-2 xl:text-2xl" style={{ opacity: 0.85 }}>
         <Highlighter
           key={profile.id}
           color={highlightColor}
@@ -311,7 +311,7 @@ function PersonPopupCard({
         </Highlighter>
    
       </p>
-      <p className="mt-2 text-sm leading-snug text-slate-600 lg:mt-1.5 lg:text-xs xl:mt-2 xl:text-sm">{profile.full_name_th}</p>
+      <p className="mt-2 text-sm leading-snug text-muted-foreground lg:mt-1.5 lg:text-xs xl:mt-2 xl:text-sm">{profile.full_name_th}</p>
     </motion.div>
   );
 }
@@ -375,8 +375,8 @@ function DockButton({
           isSelected
             ? "scale-110 border-slate-900 bg-black text-white shadow-lg"
             : axis === "y"
-              ? "scale-100 border-slate-200 bg-white text-slate-500 hover:translate-x-0.5 hover:border-slate-400 hover:text-slate-900"
-              : "scale-100 border-slate-200 bg-white text-slate-500 hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900"
+              ? "scale-100 border-border bg-card text-muted-foreground hover:translate-x-0.5 hover:border-slate-400 hover:text-foreground"
+              : "scale-100 border-border bg-card text-muted-foreground hover:-translate-y-0.5 hover:border-slate-400 hover:text-foreground"
         )}
       >
         <Icon className="h-5 w-5" />
@@ -603,7 +603,7 @@ function SectionPageContent() {
     <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden lg:h-[calc(100dvh-3.5rem)] lg:min-h-0 lg:flex-row">
       {/* Desktop: vertical dock */}
       <aside className="hidden shrink-0 flex-col items-center justify-center py-4 pl-2 pr-1 lg:flex lg:w-[5.5rem] xl:w-24">
-        <div className="flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-2 overflow-y-auto rounded-full border border-neutral-200 p-3 shadow-md ring-1 ring-slate-300 no-scrollbar xl:gap-2.5 xl:p-[18px]">
+        <div className="flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-2 overflow-y-auto rounded-full border border-border p-3 shadow-md ring-1 ring-slate-300 no-scrollbar xl:gap-2.5 xl:p-[18px]">
           {SECTIONS.map((s) => (
             <DockButton
               key={s.id}
@@ -628,7 +628,7 @@ function SectionPageContent() {
             ) : loading ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="h-24 w-24 animate-pulse rounded-full bg-slate-200" />
-                <div className="h-4 w-32 animate-pulse rounded bg-slate-100" />
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
               </div>
             ) : (
               <>
@@ -678,7 +678,7 @@ function SectionPageContent() {
                           >
                             <div
                               className={cn(
-                                "flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-2 ring-1 ring-slate-200 transition-shadow",
+                                "flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-card p-2 ring-1 ring-border transition-shadow",
                                 activePopupId === item.id && "ring-2 ring-slate-900 shadow-lg"
                               )}
                             >
@@ -708,7 +708,7 @@ function SectionPageContent() {
                           >
                             <div
                               className={cn(
-                                "h-full w-full overflow-hidden rounded-full bg-white ring-1 ring-slate-200 transition-shadow",
+                                "h-full w-full overflow-hidden rounded-full bg-card ring-1 ring-border transition-shadow",
                                 activePopupId === item.id && "ring-2 ring-slate-900 shadow-lg"
                               )}
                             >
@@ -728,7 +728,7 @@ function SectionPageContent() {
                       {sectionHead ? (
                         <button
                           type="button"
-                          className="relative flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-white shadow-md"
+                          className="relative flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-card shadow-md"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -758,16 +758,16 @@ function SectionPageContent() {
                           </div>
                         </button>
                       ) : (
-                        <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white shadow-md">
-                          <selected.icon className="h-8 w-8 text-slate-700" />
-                          <span className="max-w-[5.5rem] truncate text-center text-[10px] font-medium text-slate-600">
+                        <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-card shadow-md">
+                          <selected.icon className="h-8 w-8 text-foreground" />
+                          <span className="max-w-[5.5rem] truncate text-center text-[10px] font-medium text-muted-foreground">
                             {selected.label.replace("ฝ่าย", "")}
                           </span>
                         </div>
                       )}
                     </div>
                     {showEmptyOrbit && (
-                      <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-sm text-slate-500">
+                      <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-sm text-muted-foreground">
                         ยังไม่มีสมาชิกในฝ่ายนี้
                       </p>
                     )}
@@ -801,20 +801,20 @@ function SectionPageContent() {
           <button
             type="button"
             onClick={() => setMobilePanelOpen(true)}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm active:scale-[0.99]"
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm active:scale-[0.99]"
           >
             <span className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
                 <selected.icon className="h-4 w-4" />
               </span>
               <span className="text-left">
-                <span className="block text-[11px] text-slate-400">ฝ่าย</span>
-                <span className="block text-sm font-semibold text-slate-900">
+                <span className="block text-[11px] text-muted-foreground">ฝ่าย</span>
+                <span className="block text-sm font-semibold text-foreground">
                   {selected.label}
                 </span>
               </span>
             </span>
-            <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
+            <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
               รายละเอียด
               <ChevronUp className="h-4 w-4" />
             </span>
@@ -822,7 +822,7 @@ function SectionPageContent() {
         </div>
 
         {/* Mobile: horizontal dock */}
-        <div className="shrink-0 border-t border-slate-100 bg-white/80 backdrop-blur-sm lg:hidden">
+        <div className="shrink-0 border-t border-border bg-card/80 backdrop-blur-sm lg:hidden">
           <div className="flex items-end gap-2 overflow-x-auto px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] no-scrollbar snap-x snap-mandatory">
             {SECTIONS.map((s) => (
               <div key={s.id} className="snap-center shrink-0 pb-1">
@@ -840,7 +840,7 @@ function SectionPageContent() {
       </div>
 
       {/* Desktop: section detail sidebar */}
-      <aside className="hidden w-[min(100%,340px)] shrink-0 overflow-hidden border-l border-slate-200 bg-white lg:flex lg:w-[300px] lg:flex-col xl:w-[340px]">
+      <aside className="hidden w-[min(100%,340px)] shrink-0 overflow-hidden border-l border-border bg-card lg:flex lg:w-[300px] lg:flex-col xl:w-[340px]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={selected.id}
@@ -878,7 +878,7 @@ function SectionPageContent() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 32, mass: 0.9 }}
-              className="fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[78dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.35)] md:max-h-[52dvh] md:max-w-md"
+              className="fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[78dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-card shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.35)] md:max-h-[52dvh] md:max-w-md"
             >
               <div className="flex shrink-0 items-center justify-between px-4 pt-3">
                 <div className="mx-auto h-1.5 w-10 rounded-full bg-slate-200" />
@@ -886,7 +886,7 @@ function SectionPageContent() {
                   type="button"
                   aria-label="ปิด"
                   onClick={() => setMobilePanelOpen(false)}
-                  className="absolute right-4 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+                  className="absolute right-4 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -907,7 +907,7 @@ function SectionPageContent() {
 
 function SectionPageFallback() {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center text-sm text-neutral-500">
+    <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
       Loading section…
     </div>
   );

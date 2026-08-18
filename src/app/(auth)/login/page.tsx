@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
+import { ThemeLogo } from "@/components/ThemeLogo";
 import { Highlighter } from "@/components/ui/highlighter";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -88,16 +88,16 @@ export default function SignupFormDemo() {
 
   return (
     <div className="flex min-h-dvh w-full flex-col md:flex-row">
-      <div className="shadow-input flex w-full flex-1 items-center justify-center rounded-none bg-white p-4 md:p-8 dark:bg-black">
+      <div className="shadow-input flex w-full flex-1 items-center justify-center rounded-none bg-background p-4 md:p-8">
         <div className="w-full max-w-md">
-          <div className="flex">
-            <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
-              <Image className="mb-5" src="/logo_img_white.png" alt="logo" width={80} height={80} />
+          <div className="flex flex-col">
+            <ThemeLogo variant="icon" alt="Pistar28" width={80} height={80} className="mb-5 h-20 w-20 object-contain" />
+            <h2 className="text-xl font-bold text-foreground">
               เข้าสู่ระบบ
             </h2>
           </div>
 
-          <div className="mt-2 max-w-md text-sm text-neutral-600 dark:text-neutral-300 relative">
+          <div className="relative mt-2 max-w-md text-sm text-muted-foreground">
             <Highlighter action="highlight" animationDuration={500} iterations={3} color="#fdff7d8b">
               <div className=" px-[5px]"> เฉพาะนักศึกษาในศูนย์ </div>
             </Highlighter>{" "}
@@ -147,7 +147,7 @@ export default function SignupFormDemo() {
             <div className="flex h-40 w-full items-center pl-[8px]">
               <Link
                 href="/"
-                className="pt-[5px] flex h-[36px] w-[100px] rounded-[24px] outline-2 mr-[8px] px-5 outline-black hover:bg-neutral-100 cursor-pointer align-item-center text-center"
+                className="mr-2 flex h-9 w-[100px] items-center justify-center rounded-[24px] border border-border px-5 text-center hover:bg-muted"
               >
                 cancel
               </Link>
@@ -155,7 +155,7 @@ export default function SignupFormDemo() {
                 Log in
               </Button>
             </div>
-            <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent dark:via-neutral-700" />
+            <div className="my-8 h-px w-full bg-border" />
           </form>
         </div>
       </div>

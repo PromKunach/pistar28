@@ -17,6 +17,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
@@ -98,14 +99,14 @@ function MenuItem({
   className?: string;
 }) {
   const classes = cn(
-    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50",
+    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted",
     className,
   );
 
   if (href) {
     return (
       <Link href={href} className={classes} onClick={onClick}>
-        <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
         {children}
       </Link>
     );
@@ -113,7 +114,7 @@ function MenuItem({
 
   return (
     <button type="button" className={classes} onClick={onClick}>
-      <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       {children}
     </button>
   );
@@ -210,18 +211,20 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   }, [menuOpen]);
 
   return (
-    <header className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+    <header className="flex items-center gap-3 border-b border-border bg-background px-4 py-3 sm:px-6">
       <button
         className="md:hidden"
         onClick={onOpenSidebar}
         aria-label="Open menu"
       >
-        <Menu className="h-5 w-5 text-slate-600" />
+        <Menu className="h-5 w-5 text-muted-foreground" />
       </button>
 
-      <div className="relative ml-auto flex items-center gap-3 sm:gap-4" ref={menuRef}>
+      <div className="relative ml-auto flex items-center gap-2 sm:gap-3" ref={menuRef}>
+        <ThemeToggle />
+
         {ready && user ? (
-          <span className="max-w-[140px] truncate text-sm font-medium text-slate-800 sm:max-w-[220px]">
+          <span className="max-w-[140px] truncate text-sm font-medium text-foreground sm:max-w-[220px]">
             {user.displayName}
           </span>
         ) : ready ? (
@@ -232,7 +235,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
             เข้าสู่ระบบ
           </Link>
         ) : (
-          <span className="h-8 w-20 animate-pulse rounded-md bg-slate-100" aria-hidden />
+          <span className="h-8 w-20 animate-pulse rounded-md bg-muted" aria-hidden />
         )}
 
         <button
@@ -241,7 +244,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           onClick={() => setMenuOpen((open) => !open)}
-          className="rounded-full p-1 transition-colors hover:bg-slate-100"
+          className="rounded-full p-1 transition-colors hover:bg-muted"
         >
           {user?.avatarUrl ? (
             <Image
@@ -252,18 +255,18 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
               className="h-7 w-7 rounded-full object-cover"
             />
           ) : (
-            <User className="h-5 w-5 text-slate-500" />
+            <User className="h-5 w-5 text-muted-foreground" />
           )}
         </button>
 
         {menuOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+            className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
           >
             {user ? (
               <>
-                <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                <div className="flex items-center gap-3 border-b border-border px-4 py-3">
                   {user.avatarUrl ? (
                     <Image
                       src={user.avatarUrl}
@@ -273,15 +276,15 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
                       className="h-10 w-10 shrink-0 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100">
-                      <User className="h-5 w-5 text-slate-500" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <User className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">
+                    <p className="truncate text-sm font-medium text-popover-foreground">
                       {user.displayName}
                     </p>
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                   </div>
                 </div>
 
@@ -317,11 +320,11 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
                 
                 </div>
 
-                <div className="border-t border-slate-100 p-1.5">
+                <div className="border-t border-border p-1.5">
                   <MenuItem
                     icon={LogOut}
                     onClick={handleSignOut}
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-red-600 hover:bg-red-500/10 dark:hover:bg-red-500/15"
                   >
                     {signingOut ? "กำลังออก..." : "Sign out"}
                   </MenuItem>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Image from "next/image";
+import { ThemeLogo } from "@/components/ThemeLogo";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -46,39 +46,33 @@ export function AboutPanel({
             exit={{ y: "-110%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
           >
-            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 ring-1 ring-slate-200">
-                    <Image
-                      src="/logo_img_white.png"
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 object-contain"
-                    />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted ring-1 ring-border">
+                    <ThemeLogo variant="icon" alt="" width={32} height={32} className="h-8 w-8 object-contain" />
                   </div>
                   <div>
                     <h2
                       id="about-panel-title"
-                      className="text-lg font-semibold text-slate-900"
+                      className="text-lg font-semibold text-foreground"
                     >
                       เกี่ยวกับเรา
                     </h2>
-                    <p className="text-sm text-slate-500">PI*28</p>
+                    <p className="text-sm text-muted-foreground">PI*28</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-muted-foreground"
                   aria-label="ปิด"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="space-y-4 text-sm leading-relaxed text-slate-600">
+              <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
                 <p>
                   เว็บไซต์สำหรับคณะแพทยศาสตร์ สถาบันพระบรมราชชนก รุ่น PI*28
                   
@@ -86,7 +80,7 @@ export function AboutPanel({
                 <p>
                   เว็บไซต์นี้สร้างขึ้นเพื่อประดับรุ่นเฉยๆ
                 </p>
-                <p className="text-xs text-slate-400">เวอร์ชัน beta</p>
+                <p className="text-xs text-muted-foreground">เวอร์ชัน beta</p>
               </div>
             </div>
           </motion.div>

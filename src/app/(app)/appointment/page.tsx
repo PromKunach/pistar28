@@ -125,12 +125,12 @@ function YearDropdown({
         aria-haspopup="listbox"
         aria-label={`เลือกปี ${year + 543}`}
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-8 items-center gap-1 rounded-lg text-sm font-semibold text-slate-900 transition-colors hover:text-slate-600 dark:text-neutral-100 dark:hover:text-neutral-300"
+        className="inline-flex h-8 items-center gap-1 rounded-lg text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
       >
         <span className="tabular-nums">{year + 543}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-slate-500 transition-transform duration-200 dark:text-neutral-400",
+            "h-4 w-4 text-muted-foreground transition-transform duration-200",
             open && "rotate-180"
           )}
         />
@@ -143,7 +143,7 @@ function YearDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute left-0 top-[calc(100%+6px)] z-50 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+            className="absolute left-0 top-[calc(100%+6px)] z-50 w-36 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
           >
             <div
               ref={listRef}
@@ -167,13 +167,13 @@ function YearDropdown({
                     className={cn(
                       "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm tabular-nums transition-colors",
                       isActive
-                        ? "bg-slate-100 font-semibold text-slate-900 dark:bg-neutral-800 dark:text-neutral-100"
-                        : "text-slate-600 hover:bg-slate-50 dark:text-neutral-400 dark:hover:bg-neutral-800/70"
+                        ? "bg-muted font-semibold text-foreground"
+                        : "text-muted-foreground hover:bg-muted"
                     )}
                   >
                     {option + 543}
                     {isActive && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-neutral-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                     )}
                   </button>
                 )
@@ -441,7 +441,7 @@ export default function AppointmentPage() {
   return (
     <div className="container space-y-4 px-[20px] pb-[20px] pt-2 no-scrollbar">
       <div>
-        <h1 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
+        <h1 className="text-2xl font-semibold text-foreground">
           กำหนดการณ์
         </h1>
       </div>
@@ -454,9 +454,9 @@ export default function AppointmentPage() {
         <section className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
           <PaperDateCard date={selected} accentColor={selectedDayAccent} />
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-neutral-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 รายการในวันนี้
               </p>
               <Button
@@ -464,7 +464,7 @@ export default function AppointmentPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsAddOpen(true)}
-                className="text-slate-600 dark:text-neutral-400"
+                className="text-muted-foreground"
               >
                 <Plus className="h-4 w-4" />
                 
@@ -473,7 +473,7 @@ export default function AppointmentPage() {
 
             <ul className="space-y-2">
               {isLoading ? (
-                <li className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-500">
+                <li className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
                   กำลังโหลด...
                 </li>
               ) : selectedAppointments.length > 0 ? (
@@ -484,7 +484,7 @@ export default function AppointmentPage() {
                     <button
                       type="button"
                       onClick={() => openAppointmentDetail(item.id)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left transition-colors hover:border-slate-300 hover:bg-white dark:border-neutral-800 dark:bg-neutral-950/40 dark:hover:border-neutral-700"
+                      className="w-full rounded-xl border border-border bg-muted/80 px-4 py-3 text-left transition-colors hover:border-border hover:bg-card"
                     >
                     <div className="flex items-start gap-3">
                       <span
@@ -498,17 +498,17 @@ export default function AppointmentPage() {
                         />
                         {item.tag_label ? (
                           <span
-                            className="mb-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-neutral-400"
+                            className="mb-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                             style={{ borderColor: item.tag_color ?? undefined }}
                           >
                             {item.tag_label}
                           </span>
                         ) : null}
-                        <p className="text-sm font-medium text-slate-900 dark:text-neutral-100">
+                        <p className="text-sm font-medium text-foreground">
                           {item.title}
                         </p>
                         {description ? (
-                          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-neutral-400">
+                          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                             {description}
                           </p>
                         ) : null}
@@ -519,7 +519,7 @@ export default function AppointmentPage() {
                   )
                 })
               ) : (
-                <li className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-neutral-800 dark:text-neutral-500">
+                <li className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
                   {filterIsActive
                     ? "ไม่มีนัดหมายที่ตรงกับตัวกรอง"
                     : "ไม่มีนัดหมายในวันนี้"}
@@ -530,10 +530,10 @@ export default function AppointmentPage() {
         </section>
 
         <section className="min-w-0 flex-1">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-neutral-100">
+                <h2 className="text-lg font-semibold text-foreground">
                   {monthLabel}
                 </h2>
                 <YearDropdown
@@ -575,7 +575,7 @@ export default function AppointmentPage() {
               {WEEKDAYS.map((label) => (
                 <div
                   key={label}
-                  className="py-2 text-center text-xs font-medium text-slate-500 dark:text-neutral-500"
+                  className="py-2 text-center text-xs font-medium text-muted-foreground"
                 >
                   {label}
                 </div>
@@ -605,7 +605,7 @@ export default function AppointmentPage() {
                       "relative z-0 flex min-h-16 flex-col rounded-lg border p-2 text-left sm:min-h-20",
                       isSelected
                         ? "z-[101] border-transparent bg-transparent"
-                        : "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/70"
+                        : "border-border bg-card hover:border-border hover:bg-muted"
                     )}
                   >
 
@@ -614,9 +614,9 @@ export default function AppointmentPage() {
                         "relative z-10 inline-flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium",
                         isToday &&
                           !isSelected &&
-                          "bg-slate-900 text-white dark:bg-neutral-100 dark:text-neutral-900",
-                        isSelected && "text-slate-900 dark:text-neutral-100",
-                        !isToday && !isSelected && "text-slate-700 dark:text-neutral-300"
+                          "bg-primary text-primary-foreground",
+                        isSelected && "text-foreground",
+                        !isToday && !isSelected && "text-foreground"
                       )}
                     >
                       {cell.day}

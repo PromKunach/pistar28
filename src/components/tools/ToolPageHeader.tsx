@@ -12,14 +12,14 @@ export function ToolPageHeader({
     <header className="mb-6">
       <Link
         href="/tools"
-        className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
+        className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
         เครื่องมือทั้งหมด
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+      <h1 className="text-2xl font-bold text-foreground">{title}</h1>
       {description ? (
-        <p className="mt-1 text-sm text-slate-500">{description}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       ) : null}
     </header>
   );

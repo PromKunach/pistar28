@@ -18,7 +18,7 @@ export function MemberBlacklistPicker({
 
   return (
     <div>
-      <p className="mb-3 text-sm text-slate-600">
+      <p className="mb-3 text-sm text-muted-foreground">
         เข้าร่วม {eligible} / {members.length} คน · แตะเพื่อยกเว้น
       </p>
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
@@ -32,8 +32,8 @@ export function MemberBlacklistPicker({
               className={cn(
                 "flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition-colors",
                 excluded
-                  ? "border-red-200 bg-red-50 opacity-60"
-                  : "border-slate-200 bg-white hover:bg-slate-50"
+                  ? "border-red-200 bg-red-50 opacity-60 dark:border-red-900/50 dark:bg-red-950/30"
+                  : "border-border bg-card hover:bg-muted"
               )}
             >
               <Image
@@ -43,11 +43,11 @@ export function MemberBlacklistPicker({
                 height={48}
                 className="h-12 w-12 rounded-full object-cover"
               />
-              <span className="line-clamp-2 text-[10px] font-medium text-slate-700">
+              <span className="line-clamp-2 text-[10px] font-medium text-foreground">
                 {member.nickname_th}
               </span>
               {excluded ? (
-                <span className="text-[9px] font-medium text-red-600">ยกเว้น</span>
+                <span className="text-[9px] font-medium text-red-600 dark:text-red-400">ยกเว้น</span>
               ) : null}
             </button>
           );

@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono, Noto_Sans_Thai, Noto_Sans_Thai_Looped, Itim } from "next/font/google";
 import localFont from "next/font/local";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
+import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -61,18 +62,21 @@ export default function RootLayout({
 }) {
   return (
     <html
-  lang="en"
-  className={cn(
-    geist.variable,
-    googleSans.variable,
-    geistMono.variable,
-    notoSansThai.variable,
-    notoSansThaiLooped.variable,
-    itim.variable
-  )}
->
+      lang="en"
+      suppressHydrationWarning
+      className={cn(
+        geist.variable,
+        googleSans.variable,
+        geistMono.variable,
+        notoSansThai.variable,
+        notoSansThaiLooped.variable,
+        itim.variable
+      )}
+    >
       <body className="font-mono antialiased">
-        <AppLayoutWrapper>{children}</AppLayoutWrapper>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AppLayoutWrapper>{children}</AppLayoutWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );

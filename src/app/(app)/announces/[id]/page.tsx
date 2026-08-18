@@ -98,6 +98,7 @@ import {
   isDockBlock,
   isLinkBlock,
   isTextBlock,
+  isDefaultBlockColor,
   normalizeBoardBlocksForSave,
   recordToBoardContent,
   updateBoard,
@@ -1416,6 +1417,8 @@ function TextBlock({
     return () => observer.disconnect()
   }, [onMeasure, block.text, block.description, isExpanded])
 
+  const usesDefaultColor = isDefaultBlockColor(block.color)
+
   return (
     <div
       ref={rootRef}
@@ -1428,16 +1431,15 @@ function TextBlock({
         left: `${block.x * 100}%`,
         top: `${block.y * 100}%`,
         width: `${block.width * 100}%`,
-        color: block.color,
         fontSize: block.fontSize,
       }}
       className={cn(
-        "absolute min-h-32 cursor-move rounded-lg border bg-white p-3 shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-[box-shadow,border-color,transform] duration-300 ease-out dark:bg-neutral-900 dark:shadow-[0_4px_20px_rgba(0,0,0,0.45)]",
+        "absolute min-h-32 cursor-move rounded-lg border bg-card p-3 text-card-foreground shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-[box-shadow,border-color,transform] duration-300 ease-out",
         blockStackLayerClass(block.id, topStackIds, { isExpanded }),
         isExpanded &&
-          "scale-[1.02] border-neutral-900 shadow-[0_4px_10px_rgba(0,0,0,0.1),0_16px_40px_rgba(0,0,0,0.18)] dark:border-neutral-100 dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
+          "scale-[1.02] border-foreground shadow-[0_4px_10px_rgba(0,0,0,0.1),0_16px_40px_rgba(0,0,0,0.18)]",
         !isExpanded &&
-          "border-transparent hover:border-neutral-300 hover:shadow-[0_4px_10px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_6px_28px_rgba(0,0,0,0.55)]"
+          "border-transparent hover:border-border hover:shadow-[0_4px_10px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)]"
       )}
     >
       {isExpanded && canEdit && (
@@ -1450,7 +1452,7 @@ function TextBlock({
             onEdit()
           }}
           className={cn(
-            "absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm transition-all duration-200 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800/95 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-neutral-100",
+            "absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border bg-card/95 text-muted-foreground shadow-sm transition-all duration-200 hover:bg-muted hover:text-foreground active:scale-95",
             isExpanded
               ? "translate-y-0 opacity-100 delay-100"
               : "pointer-events-none translate-y-1 opacity-0"
@@ -1460,25 +1462,31 @@ function TextBlock({
         </button>
       )}
 
-      <div className="mb-2 flex items-center gap-2 border-b border-neutral-200/80 pb-2 pe-8">
+      <div className="mb-2 flex items-center gap-2 border-b border-border/80 pb-2 pe-8">
         {block.author.avatarUrl ? (
           <img
             src={block.author.avatarUrl}
             alt=""
-            className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-neutral-200"
+            className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-border"
           />
         ) : (
-          <div className="h-7 w-7 shrink-0 rounded-full bg-neutral-200" />
+          <div className="h-7 w-7 shrink-0 rounded-full bg-muted" />
         )}
-        <span className="truncate text-xs font-medium text-neutral-600 dark:text-neutral-400">
+        <span className="truncate text-xs font-medium text-muted-foreground">
           {block.author.displayName}
         </span>
       </div>
 
       <div className="flex min-h-16 flex-col items-center justify-center px-1">
-        <p className="w-full text-center leading-snug whitespace-pre-wrap break-words select-none">
+        <p
+          className={cn(
+            "w-full text-center leading-snug whitespace-pre-wrap break-words select-none",
+            usesDefaultColor && "text-foreground"
+          )}
+          style={usesDefaultColor ? undefined : { color: block.color }}
+        >
           {block.text || (
-            <span className="text-neutral-400">ยังไม่มีข้อความ</span>
+            <span className="text-muted-foreground">ยังไม่มีข้อความ</span>
           )}
         </p>
       </div>
@@ -1492,10 +1500,10 @@ function TextBlock({
         )}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-neutral-200/80 pt-2.5 dark:border-neutral-700/80">
-            <p className="text-base leading-relaxed whitespace-pre-wrap text-neutral-500 dark:text-neutral-400">
+          <div className="border-t border-border/80 pt-2.5">
+            <p className="text-base leading-relaxed whitespace-pre-wrap text-muted-foreground">
               {block.description.trim() || (
-                <span className="text-neutral-400 dark:text-neutral-500">
+                <span className="text-muted-foreground/70">
                   ยังไม่มีคำอธิบาย
                 </span>
               )}
@@ -2016,6 +2024,7 @@ function CommentBlock({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPopupOpen, setIsPopupOpen] = useState(false)
   const displayTitle = block.title.trim() || "ความคิดเห็น"
+  const usesDefaultColor = isDefaultBlockColor(block.color)
 
   useEffect(() => {
     if (!isPopupOpen) return
@@ -2113,7 +2122,6 @@ function CommentBlock({
         left: `${block.x * 100}%`,
         top: `${block.y * 100}%`,
         width: `${DEFAULT_COMMENT_WIDTH * 100}%`,
-        color: block.color,
         fontSize: block.fontSize,
       }}
       className={cn(
@@ -2126,10 +2134,10 @@ function CommentBlock({
         ref={anchorRef}
         data-comment-block-anchor
         className={cn(
-          "relative rounded-lg border bg-white p-3 shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-[box-shadow,border-color] duration-300 dark:bg-neutral-900",
+          "relative rounded-lg border bg-card p-3 text-card-foreground shadow-[0_2px_6px_rgba(0,0,0,0.08),0_8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-[box-shadow,border-color] duration-300",
           isExpanded
-            ? "border-neutral-900 dark:border-neutral-100"
-            : "border-transparent hover:border-neutral-300"
+            ? "border-foreground"
+            : "border-transparent hover:border-border"
         )}
       >
         {isExpanded && canEdit && (
@@ -2141,31 +2149,37 @@ function CommentBlock({
               event.stopPropagation()
               onEdit()
             }}
-            className="absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm transition-all hover:bg-neutral-50 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800/95"
+            className="absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border bg-card/95 text-muted-foreground shadow-sm transition-all hover:bg-muted active:scale-95"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
         )}
 
-        <div className="mb-2 flex items-center gap-2 border-b border-neutral-200/80 pb-2 pe-8">
+        <div className="mb-2 flex items-center gap-2 border-b border-border/80 pb-2 pe-8">
           {block.author.avatarUrl ? (
             <img
               src={block.author.avatarUrl}
               alt=""
-              className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-neutral-200"
+              className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-border"
             />
           ) : (
-            <div className="h-7 w-7 shrink-0 rounded-full bg-neutral-200" />
+            <div className="h-7 w-7 shrink-0 rounded-full bg-muted" />
           )}
-          <span className="truncate text-xs font-medium text-neutral-600 dark:text-neutral-400">
+          <span className="truncate text-xs font-medium text-muted-foreground">
             {block.author.displayName}
           </span>
         </div>
 
         <div className="flex min-h-16 flex-col items-center justify-center px-1">
-          <p className="w-full text-center leading-snug whitespace-pre-wrap break-words">
+          <p
+            className={cn(
+              "w-full text-center leading-snug whitespace-pre-wrap break-words",
+              usesDefaultColor && "text-foreground"
+            )}
+            style={usesDefaultColor ? undefined : { color: block.color }}
+          >
             {block.title.trim() || (
-              <span className="text-neutral-400">ความคิดเห็น</span>
+              <span className="text-muted-foreground">{displayTitle}</span>
             )}
           </p>
         </div>

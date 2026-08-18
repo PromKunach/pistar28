@@ -49,7 +49,7 @@ export function FeedImageCarousel({ images }: { images: FeedPostImageRecord[] })
             <img
               src={getFeedPostImageUrl(image.storage_path)}
               alt=""
-              className="max-h-[480px] w-full rounded-xl bg-neutral-100 object-contain dark:bg-neutral-800"
+              className="max-h-[480px] w-full rounded-xl bg-muted object-contain"
             />
           </div>
         ))}
@@ -85,8 +85,8 @@ export function FeedImageCarousel({ images }: { images: FeedPostImageRecord[] })
                 className={cn(
                   "h-1.5 w-1.5 rounded-full transition-colors",
                   index === activeIndex
-                    ? "bg-neutral-900 dark:bg-neutral-100"
-                    : "bg-neutral-300 dark:bg-neutral-600"
+                    ? "bg-foreground"
+                    : "bg-muted-foreground/40"
                 )}
               />
             ))}

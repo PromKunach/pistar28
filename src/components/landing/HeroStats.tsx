@@ -47,18 +47,18 @@ function HeroProgramCountdown({
             className="flex flex-col items-center gap-0.5 text-center sm:flex-row sm:items-baseline sm:gap-1.5"
           >
             <span
-              className="text-xl font-semibold tabular-nums text-neutral-900 sm:text-2xl md:text-3xl dark:text-neutral-100"
+              className="text-xl font-semibold tabular-nums text-foreground sm:text-2xl md:text-3xl"
               suppressHydrationWarning
             >
               {parts[unit.key]}
             </span>
-            <span className="text-[10px] text-slate-500 sm:text-xs md:text-sm dark:text-neutral-400">
+            <span className="text-[10px] text-muted-foreground sm:text-xs md:text-sm">
               {unit.label}
             </span>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-center text-xs text-slate-500 sm:mt-4 sm:text-sm md:text-base dark:text-neutral-400">
+      <p className="mt-3 text-center text-xs text-muted-foreground sm:mt-4 sm:text-sm md:text-base">
         จนถึงวันที่ได้เป็นหมอ...
       </p>
     </div>
@@ -86,17 +86,17 @@ export function HeroStats({
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="flex w-full min-w-0 items-center rounded-xl bg-[#171717] pl-2 shadow-[0_8px_24px_rgba(0,0,0,0.12),inset_0_1px_0_0_rgba(255,255,255,0.7),inset_0_0_0_5px_rgba(255,255,255,0.08),inset_0_12px_24px_rgba(255,255,255,0.04)]"
+            className="flex w-full min-w-0 items-center rounded-xl border border-border bg-card pl-2 shadow-sm"
           >
             <div className="flex w-full min-w-0 flex-col items-start rounded-xl border border-transparent px-4 py-3.5 text-left sm:px-4 sm:py-5">
-              <span className="text-xs text-slate-100 sm:text-sm dark:text-neutral-400">
+              <span className="text-xs text-muted-foreground sm:text-sm">
                 {stat.label}
               </span>
               <NumberTicker
-                className="text-2xl font-semibold tabular-nums  text-slate-100 sm:text-3xl dark:text-neutral-100"
+                className="text-2xl font-semibold tabular-nums text-foreground sm:text-3xl"
                 value={stat.value}
               />
-              <span className="text-xs  text-slate-100 sm:text-sm dark:text-neutral-400">
+              <span className="text-xs text-muted-foreground sm:text-sm">
                 {stat.suffix}
               </span>
             </div>

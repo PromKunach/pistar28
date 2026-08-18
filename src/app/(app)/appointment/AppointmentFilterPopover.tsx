@@ -71,12 +71,12 @@ export function AppointmentFilterPopover({
         onClick={() => setOpen((current) => !current)}
         className={cn(
           "relative",
-          isActive && "bg-slate-100 text-slate-900 dark:bg-neutral-800 dark:text-neutral-100"
+          isActive && "bg-muted text-foreground"
         )}
       >
         <Filter className="h-4 w-4" />
         {isActive ? (
-          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-neutral-100" />
+          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary" />
         ) : null}
       </Button>
 
@@ -90,10 +90,10 @@ export function AppointmentFilterPopover({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(100vw-2rem,20rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+            className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(100vw-2rem,20rem)] overflow-hidden rounded-xl border border-border bg-card shadow-lg"
           >
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-neutral-800">
-              <p className="text-sm font-semibold text-slate-900 dark:text-neutral-100">กรอง</p>
+              <p className="text-sm font-semibold text-foreground">กรอง</p>
               <Button
                 type="button"
                 variant="ghost"
@@ -117,18 +117,18 @@ export function AppointmentFilterPopover({
                       onChange({ ...filter, search: event.target.value })
                     }
                     placeholder="ชื่อ / คำอธิบาย / แท็ก"
-                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-neutral-100 dark:placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
 
               {canFilterMine ? (
-                <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/40">
+                <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/60 px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-neutral-100">
+                    <p className="text-sm font-medium text-foreground">
                       เฉพาะของฉัน
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-neutral-500">
+                    <p className="text-xs text-muted-foreground">
                       แสดงเฉพาะนัดหมายที่คุณสร้าง
                     </p>
                   </div>
@@ -140,14 +140,14 @@ export function AppointmentFilterPopover({
                     className={cn(
                       "relative h-6 w-11 shrink-0 rounded-full transition-colors",
                       filter.mineOnly
-                        ? "bg-slate-900 dark:bg-neutral-100"
-                        : "bg-slate-200 dark:bg-neutral-700"
+                        ? "bg-primary"
+                        : "bg-muted"
                     )}
                   >
                     <span
                       className={cn(
-                        "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform dark:bg-neutral-900",
-                        filter.mineOnly && "translate-x-5 dark:bg-neutral-950"
+                        "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-card transition-transform",
+                        filter.mineOnly && "translate-x-5"
                       )}
                     />
                   </button>
@@ -168,8 +168,8 @@ export function AppointmentFilterPopover({
                           className={cn(
                             "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                             active
-                              ? "border-slate-400 bg-slate-100 text-slate-900 dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-100"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900"
+                              ? "border-primary bg-muted text-foreground"
+                              : "border-border bg-card text-muted-foreground hover:bg-muted"
                           )}
                         >
                           <span
@@ -182,13 +182,13 @@ export function AppointmentFilterPopover({
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 dark:text-neutral-500">
+                  <p className="text-xs text-muted-foreground">
                     ยังไม่มีแท็กที่บันทึกไว้
                   </p>
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-slate-200 pt-3 dark:border-neutral-800">
+              <div className="flex justify-end gap-2 border-t border-border pt-3">
                 <Button
                   type="button"
                   variant="ghost"

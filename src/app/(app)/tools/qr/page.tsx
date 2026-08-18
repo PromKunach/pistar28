@@ -40,7 +40,7 @@ export default function QrToolPage() {
           onChange={(e) => setText(e.target.value)}
           rows={4}
           placeholder="พิมพ์ข้อความหรือวางลิงก์..."
-          className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+          className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         {dataUrl ? (
           <div className="mt-6 flex flex-col items-center gap-4">
@@ -48,7 +48,7 @@ export default function QrToolPage() {
             <img
               src={dataUrl}
               alt="QR Code"
-              className="h-64 w-64 rounded-lg border border-slate-200"
+              className="h-64 w-64 rounded-lg border border-border"
             />
             <Button type="button" onClick={handleDownload}>
               ดาวน์โหลด PNG

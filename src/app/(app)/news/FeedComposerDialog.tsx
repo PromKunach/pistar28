@@ -193,10 +193,10 @@ export function FeedComposerDialog({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 28, mass: 0.8 }}
-            className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+            className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-lg font-semibold text-foreground">
                 {mode === "create" ? "สร้างโพสต์" : "แก้ไขโพสต์"}
               </h2>
               <Button type="button" variant="ghost" size="icon-sm" onClick={onClose}>
@@ -214,9 +214,8 @@ export function FeedComposerDialog({
                   rows={5}
                   placeholder="คุณกำลังคิดอะไรอยู่?"
                   className={cn(
-                    "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm",
-                    "text-neutral-900 outline-none focus:border-neutral-400",
-                    "dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+                    "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm",
+                    "text-foreground outline-none focus:border-ring"
                   )}
                 />
               </div>
@@ -252,7 +251,7 @@ export function FeedComposerDialog({
                     {existingImages.map((image) => (
                       <div
                         key={image.id}
-                        className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800"
+                        className="relative aspect-square overflow-hidden rounded-xl bg-muted"
                       >
                         <Image src={image.url} alt="" fill className="object-cover" sizes="120px" />
                         <button
@@ -272,7 +271,7 @@ export function FeedComposerDialog({
                     {pendingImages.map((image) => (
                       <div
                         key={image.id}
-                        className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800"
+                        className="relative aspect-square overflow-hidden rounded-xl bg-muted"
                       >
                         <Image
                           src={image.previewUrl}
@@ -294,7 +293,7 @@ export function FeedComposerDialog({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <p className="text-sm text-muted-foreground">
                     PNG, JPG หรือ WebP · สูงสุด {formatFileSize(MAX_UPLOAD_BYTES)} ต่อรูป
                   </p>
                 )}
@@ -303,7 +302,7 @@ export function FeedComposerDialog({
               {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
+            <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
               <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
                 ยกเลิก
               </Button>

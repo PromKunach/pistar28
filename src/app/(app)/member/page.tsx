@@ -37,11 +37,11 @@ function MemberListSkeleton() {
   return (
     <div className="space-y-2">
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-        <div key={i} className="flex animate-pulse items-center gap-3.5 rounded-full border border-slate-200 px-4 py-3.5 sm:px-5 sm:py-4">
+        <div key={i} className="flex animate-pulse items-center gap-3.5 rounded-full border border-border px-4 py-3.5 sm:px-5 sm:py-4">
           <div className="h-14 w-14 shrink-0 rounded-full bg-slate-200 sm:h-16 sm:w-16" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-3/4 rounded bg-slate-200" />
-            <div className="h-3 w-1/2 rounded bg-slate-100" />
+            <div className="h-3 w-1/2 rounded bg-muted" />
           </div>
         </div>
       ))}
@@ -290,7 +290,7 @@ function MemberList({
       style={{ paddingBottom: edgePadding }}
     >
       <div className="flex h-[20rem] w-full items-center justify-center">
-        <h1 className="text-center text-5xl font-medium leading-tight text-neutral-900 md:text-5xl lg:text-6xl dark:text-neutral-100 font-noto">
+        <h1 className="text-center text-5xl font-medium leading-tight text-foreground md:text-5xl lg:text-6xl font-noto">
           <p>สมาชิกทั้งหมดของ</p>
           <SquigglyText
             stepDuration={100}
@@ -324,11 +324,11 @@ function MemberList({
             className={cn(
               "flex w-full items-center gap-3.5 rounded-full border-2 px-4 py-3.5 text-left shadow-md transition-all duration-200 ease-out sm:gap-4 sm:px-5 sm:py-4",
               isSelected
-                ? "border-slate-400 bg-slate-100 shadow-lg"
-                : "border-transparent bg-white hover:bg-slate-50"
+                ? "border-slate-400 bg-muted shadow-lg"
+                : "border-transparent bg-card hover:bg-muted"
             )}
           >
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-slate-200 sm:h-16 sm:w-16">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-border sm:h-16 sm:w-16">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={profile.url}
@@ -339,10 +339,10 @@ function MemberList({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-base text-slate-900 sm:text-lg">
+              <p className="truncate font-medium text-base text-foreground sm:text-lg">
                 {profile.full_name_th}
               </p>
-              <p className="truncate text-sm text-slate-500">{profile.nickname_th}</p>
+              <p className="truncate text-sm text-muted-foreground">{profile.nickname_th}</p>
             </div>
           </button>
         );
@@ -359,9 +359,9 @@ export default function MemberPage() {
           <section className="order-1 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
             <DetailSkeleton />
           </section>
-          <section className="order-2 flex w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
-            <div className="border-b border-slate-100 p-4">
-              <div className="h-11 animate-pulse rounded-xl bg-slate-100" />
+          <section className="order-2 flex w-full flex-col border-t border-border lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
+            <div className="border-b border-border p-4">
+              <div className="h-11 animate-pulse rounded-xl bg-muted" />
             </div>
             <div className="flex-1 overflow-hidden p-4">
               <MemberListSkeleton />
@@ -456,9 +456,9 @@ function MemberPageContent() {
         <section className="order-1 w-full lg:order-2 lg:w-[45%] xl:w-[40%]">
           <DetailSkeleton />
         </section>
-        <section className="order-2 flex w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
-          <div className="border-b border-slate-100 p-4">
-            <div className="h-11 animate-pulse rounded-xl bg-slate-100" />
+        <section className="order-2 flex w-full flex-col border-t border-border lg:order-1 lg:w-[55%] xl:w-[60%] lg:border-t-0 lg:border-r">
+          <div className="border-b border-border p-4">
+            <div className="h-11 animate-pulse rounded-xl bg-muted" />
           </div>
           <div className="flex-1 overflow-hidden p-4">
             <MemberListSkeleton />
@@ -474,23 +474,23 @@ function MemberPageContent() {
 
   return (
     <div className="overflow-hidden flex h-[calc(100dvh-3.5rem)] flex-col lg:flex-row">
-      <section className="order-2 flex min-h-0 flex-1 w-full flex-col border-t border-slate-200 lg:order-1 lg:w-[55%] xl:w-[60%] lg:flex-none lg:border-t-0 lg:border-r">
-        <div className="shrink-0 border-b border-slate-100 p-4">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <Search className="h-4 w-4 shrink-0 text-slate-400" />
+      <section className="order-2 flex min-h-0 flex-1 w-full flex-col border-t border-border lg:order-1 lg:w-[55%] xl:w-[60%] lg:flex-none lg:border-t-0 lg:border-r">
+        <div className="shrink-0 border-b border-border p-4">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="ค้นหาชื่อ / ชื่อเล่น / ฝ่าย"
-              className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="shrink-0 border-b border-slate-100 py-3 lg:hidden">
+        <div className="shrink-0 border-b border-border py-3 lg:hidden">
           {filteredProfiles.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-500">ไม่พบสมาชิกที่ค้นหา</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">ไม่พบสมาชิกที่ค้นหา</p>
           ) : (
             <AvatarCarousel
               profiles={filteredProfiles}
@@ -502,7 +502,7 @@ function MemberPageContent() {
 
         <InertialScrollArea className="smooth-scrollbar hidden min-h-0 flex-1 p-4 pt-3 no-scrollbar lg:block">
           {filteredProfiles.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">ไม่พบสมาชิกที่ค้นหา</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">ไม่พบสมาชิกที่ค้นหา</p>
           ) : (
             <MemberList
               profiles={filteredProfiles}
@@ -525,7 +525,7 @@ function MemberPageContent() {
               authEmail={user?.email ?? null}
             />
           ) : (
-            <div className="flex h-full items-center justify-center p-8 text-sm text-slate-500">
+            <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
               เลือกสมาชิกเพื่อดูรายละเอียด
             </div>
           )}

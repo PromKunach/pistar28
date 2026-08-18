@@ -31,8 +31,8 @@ export default function ToolsPage() {
     <RequireAuth>
       <div className="mx-auto max-w-[800px] px-4 py-6">
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">เครื่องมือ</h1>
-          <p className="mt-1 text-sm text-slate-500">เครื่องมืออำนวยความสะดวกสำหรับสมาชิก</p>
+          <h1 className="text-2xl font-bold text-foreground">เครื่องมือ</h1>
+          <p className="mt-1 text-sm text-muted-foreground">เครื่องมืออำนวยความสะดวกสำหรับสมาชิก</p>
         </header>
         <div className="grid gap-3">
           {TOOLS.map((tool) => (

@@ -19,8 +19,8 @@ export function PersonRow({
   canRemove: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
-      <span className="w-16 shrink-0 text-xs text-slate-500">
+    <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-2">
+      <span className="w-16 shrink-0 text-xs text-muted-foreground">
         {getPersonDisplayName(person, index)}
       </span>
       <div className="flex-1">
@@ -35,7 +35,7 @@ export function PersonRow({
         <button
           type="button"
           onClick={onRemove}
-          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600"
+          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-red-600"
           aria-label="ลบคน"
         >
           <X className="h-4 w-4" />

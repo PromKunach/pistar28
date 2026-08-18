@@ -58,28 +58,28 @@ function ProfileSidebarInner({ user }: { user: CurrentUser | null }) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex h-dvh w-[240px] flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex h-dvh w-[240px] flex-col border-r border-border bg-card transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-4">
           {user?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={user.avatarUrl}
               alt=""
-              className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
+              className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-border"
             />
           ) : (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100">
-              <User className="h-5 w-5 text-slate-500" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+              <User className="h-5 w-5 text-muted-foreground" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-slate-900">
+            <p className="truncate text-sm font-medium text-foreground">
               {user?.displayName ?? "—"}
             </p>
-            <p className="truncate text-xs text-slate-500">{user?.studentId ?? ""}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.studentId ?? ""}</p>
           </div>
           <button
             type="button"
@@ -87,7 +87,7 @@ function ProfileSidebarInner({ user }: { user: CurrentUser | null }) {
             onClick={() => setMobileOpen(false)}
             aria-label="ปิดเมนู"
           >
-            <X className="h-5 w-5 text-slate-500" />
+            <X className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
 
@@ -102,8 +102,8 @@ function ProfileSidebarInner({ user }: { user: CurrentUser | null }) {
                 className={cn(
                   "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 <item.icon className="h-[18px] w-[18px] shrink-0" />
@@ -113,10 +113,10 @@ function ProfileSidebarInner({ user }: { user: CurrentUser | null }) {
           })}
         </nav>
 
-        <div className="space-y-1 border-t border-slate-100 p-3">
+        <div className="space-y-1 border-t border-border p-3">
           <Link
             href="/"
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Home className="h-[18px] w-[18px] shrink-0" />
             กลับหน้าหลัก
@@ -141,17 +141,17 @@ function ProfileLayoutShell({ children }: { children: React.ReactNode }) {
   const { setMobileOpen } = useProfileSection();
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-white text-slate-900">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
       <ProfileSidebarInner user={user} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center border-b border-slate-100 px-4 py-3 lg:hidden">
+        <header className="flex items-center border-b border-border px-4 py-3 lg:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
             aria-label="เปิดเมนู"
-            className="rounded-lg p-1.5 hover:bg-slate-100"
+            className="rounded-lg p-1.5 hover:bg-muted"
           >
-            <Menu className="h-5 w-5 text-slate-700" />
+            <Menu className="h-5 w-5 text-foreground" />
           </button>
           <span className="ml-3 text-sm font-medium">โปรไฟล์</span>
         </header>

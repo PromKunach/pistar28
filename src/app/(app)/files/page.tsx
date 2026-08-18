@@ -27,7 +27,7 @@ function FilesSkeleton() {
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
-          className="h-14 rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+          className="h-14 rounded-xl border border-border bg-card"
         />
       ))}
     </div>
@@ -117,14 +117,14 @@ function FilesPageContent() {
   return (
     <div className="mx-auto max-w-[800px] px-4 py-6">
       <header className="mb-4">
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+        <h1 className="text-2xl font-bold text-foreground">
           เอกสารต่างๆ
         </h1>
-        <nav className="mt-2 flex flex-wrap items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400">
+        <nav className="mt-2 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
           <button
             type="button"
             onClick={() => router.push("/files")}
-            className="hover:text-neutral-800 dark:hover:text-neutral-200"
+            className="hover:text-foreground"
           >
             ทั้งหมด
           </button>
@@ -134,7 +134,7 @@ function FilesPageContent() {
               <button
                 type="button"
                 onClick={() => openFolder(item.id)}
-                className="hover:text-neutral-800 dark:hover:text-neutral-200"
+                className="hover:text-foreground"
               >
                 {item.name}
               </button>
@@ -155,8 +155,8 @@ function FilesPageContent() {
       {isLoading ? <FilesSkeleton /> : null}
 
       {!isLoading && !loadError && folders.length === 0 && files.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-900/50">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <div className="rounded-2xl border border-dashed border-border bg-muted/50 px-6 py-12 text-center">
+          <p className="text-sm text-muted-foreground">
             ยังไม่มีเอกสารในโฟลเดอร์นี้
           </p>
         </div>

@@ -1,6 +1,6 @@
 import { Sparkle } from "lucide-react";
 import ActionCard from "@/components/ActionCard";
-import Image from "next/image";
+import { ThemeLogo } from "@/components/ThemeLogo";
 import React from "react";
 import { DottedGlowBackground } from "@/components/ui/dotted-glow-background";
 import { DiaTextReveal } from "@/components/ui/dia-text-reveal"
@@ -54,21 +54,21 @@ export default async function DashboardPage() {
       />
 
           <div className="relative z-10 flex w-full min-w-0 flex-col items-center justify-center gap-3 sm:gap-4 md:flex-row md:items-center md:gap-6">
-            <Image
-              src="/text_logo.png"
-              alt="text-logo"
-              loading="eager"
+            <ThemeLogo
+              variant="text"
+              alt="Pistar28"
+              priority
               width={300}
               height={300}
               className="h-auto w-40 max-w-[70vw] shrink-0 sm:w-52 md:w-64 lg:w-72"
             />
 
             <div className="flex w-full min-w-0 max-w-lg flex-col items-center gap-1.5 text-center sm:gap-2 md:items-start md:text-left">
-              <h2 className="flex w-full min-w-0 max-w-full flex-col items-center gap-0.5 text-center text-3xl font-medium leading-tight tracking-tight text-neutral-900 sm:text-4xl md:items-start md:text-left lg:text-5xl dark:text-neutral-400">
+              <h2 className="flex w-full min-w-0 max-w-full flex-col items-center gap-0.5 text-center text-3xl font-medium leading-tight tracking-tight text-foreground sm:text-4xl md:items-start md:text-left lg:text-5xl">
                 <span>คณะแพทยศาสตร์</span>
                 <span className="block w-full min-w-0 max-w-full overflow-hidden">
                   <DiaTextReveal
-                    className="block max-w-full font-medium dark:text-white"
+                    className="block max-w-full font-medium text-foreground"
                     repeat
                     repeatDelay={2}
                     fixedWidth
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
                   />
                 </span>
               </h2>
-              <p className="text-center text-base text-black-600 sm:text-lg md:text-left dark:text-neutral-300">
+              <p className="text-center text-base text-muted-foreground sm:text-lg md:text-left">
                 ศูนย์โรงพยาบาลราชบุรี
               </p>
             </div>
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
       />
 
       <div className="h-[50dvh] pt-36 flex flex-col items-center justify-center">
-        <span className="text-2xl font-medium mb-6 text-black-600 sm:text-lg md:text-left dark:text-neutral-300">
+        <span className="mb-6 text-2xl font-medium text-muted-foreground sm:text-lg md:text-left">
           รวมนักเรียนจากจังหวัด
         </span>
         <MorphingText className=" font-medium" texts={["ราชบุรี", "สุพรรณบุรี", "ประจวบคีรีขันธ์", "กาญจนบุรี"]} />

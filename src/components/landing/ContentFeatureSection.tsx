@@ -14,7 +14,7 @@ export type ContentFeatureSectionProps = {
 
 function FeatureImage({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="relative mx-auto h-52 w-72 max-w-full shrink-0 overflow-hidden rounded-2xl bg-slate-100 sm:h-56 sm:w-80">
+    <div className="relative mx-auto h-52 w-72 max-w-full shrink-0 overflow-hidden rounded-2xl bg-muted sm:h-56 sm:w-80">
       {src ? (
         <Image
           src={src}
@@ -24,7 +24,7 @@ function FeatureImage({ src, alt }: { src: string; alt: string }) {
           sizes="320px"
         />
       ) : (
-        <div className="flex h-full items-center justify-center text-sm text-slate-400">
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           รูปภาพ
         </div>
       )}
@@ -49,10 +49,10 @@ export function ContentFeatureSection({
   const textBlock = (
     <BlurFade inView delay={0.08}>
       <div className={textOffset ? "md:mt-16" : undefined}>
-        <h3 className="text-center text-xl font-medium tracking-tight text-neutral-900 sm:text-2xl md:text-left md:text-3xl dark:text-neutral-100">
+        <h3 className="text-center text-xl font-medium tracking-tight text-foreground sm:text-2xl md:text-left md:text-3xl">
           {title}
         </h3>
-        <p className="mt-3 max-w-prose text-center text-base leading-relaxed text-slate-600 sm:mt-4 sm:text-lg md:text-left dark:text-neutral-300">
+        <p className="mt-3 max-w-prose text-center text-base leading-relaxed text-muted-foreground sm:mt-4 sm:text-lg md:text-left">
           {body}
         </p>
       </div>

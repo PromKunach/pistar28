@@ -129,8 +129,8 @@ export default function MatchMakerPage() {
               className={cn(
                 "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                 mode === option.value
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted"
               )}
             >
               {option.label}
@@ -139,7 +139,7 @@ export default function MatchMakerPage() {
         </div>
 
         {mode === "group" ? (
-          <div className="mb-6 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-6 space-y-4 rounded-xl border border-border bg-muted p-4">
             <div className="flex gap-2">
               {(
                 [
@@ -157,8 +157,8 @@ export default function MatchMakerPage() {
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                     groupStrategy === option.value
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {option.label}
@@ -201,7 +201,7 @@ export default function MatchMakerPage() {
         ) : null}
 
         {loading ? (
-          <div className="h-40 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-40 animate-pulse rounded-xl bg-muted" />
         ) : loadError ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {loadError}
@@ -256,10 +256,10 @@ export default function MatchMakerPage() {
 
         {experimentResults ? (
           <div className="mt-6 space-y-3">
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-foreground">
               ผลการทดลอง ({EXPERIMENT_ROUNDS} รอบ)
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               แสดงจำนวนครั้งที่แต่ละคู่ถูกจับด้วยกัน
             </p>
             <PairExperimentResults

@@ -60,23 +60,23 @@ export function ContactPanel({
             exit={{ y: "-110%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
           >
-            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
                   <h2
                     id="contact-panel-title"
-                    className="text-lg font-semibold text-slate-900"
+                    className="text-lg font-semibold text-foreground"
                   >
                     ช่องทางติดต่อ
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     ติดต่อทีมงาน PI*28 ได้ผ่านช่องทางด้านล่าง
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-muted-foreground"
                   aria-label="ปิด"
                 >
                   <X className="h-5 w-5" />
@@ -90,16 +90,16 @@ export function ContactPanel({
                       href={channel.href}
                       target={channel.href.startsWith("mailto:") ? undefined : "_blank"}
                       rel={channel.href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
-                      className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-300 hover:bg-white"
+                      className="flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3 transition-colors hover:border-slate-300 hover:bg-card"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 ring-1 ring-slate-200">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card text-foreground ring-1 ring-border">
                         <channel.icon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+                        <span className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           {channel.label}
                         </span>
-                        <span className="block truncate text-sm font-medium text-slate-900">
+                        <span className="block truncate text-sm font-medium text-foreground">
                           {channel.value}
                         </span>
                       </span>

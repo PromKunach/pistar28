@@ -53,11 +53,11 @@ export function Content3DCarousel({
     <section className="mx-auto mt-14 w-full min-w-0 max-w-6xl overflow-x-hidden px-4 sm:mt-20 sm:px-6 md:mt-24">
       <BlurFade inView>
         <div className="mb-10 text-center">
-          <h2 className="text-2xl font-medium tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-100">
+          <h2 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
             {title}
           </h2>
           {subline ? (
-            <p className="mt-3 text-base text-slate-600 sm:text-lg dark:text-neutral-300">
+            <p className="mt-3 text-base text-muted-foreground sm:text-lg">
               {subline}
             </p>
           ) : null}
@@ -69,7 +69,7 @@ export function Content3DCarousel({
           type="button"
           onClick={prev}
           aria-label="ก่อนหน้า"
-          className="absolute top-1/2 left-1 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 sm:left-0 sm:h-10 sm:w-10"
+          className="absolute top-1/2 left-1 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition hover:bg-muted sm:left-0 sm:h-10 sm:w-10"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -78,7 +78,7 @@ export function Content3DCarousel({
           type="button"
           onClick={next}
           aria-label="ถัดไป"
-          className="absolute top-1/2 right-1 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 sm:right-0 sm:h-10 sm:w-10"
+          className="absolute top-1/2 right-1 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition hover:bg-muted sm:right-0 sm:h-10 sm:w-10"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -108,7 +108,7 @@ export function Content3DCarousel({
                   }}
                   transition={{ type: "spring", stiffness: 260, damping: 26 }}
                   className={cn(
-                    "absolute top-1/2 left-1/2 h-56 w-44 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-slate-100 shadow-lg ring-1 ring-black/5 sm:h-60 sm:w-48",
+                    "absolute top-1/2 left-1/2 h-56 w-44 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-muted shadow-lg ring-1 ring-border sm:h-60 sm:w-48",
                     offset === 0 ? "cursor-default" : "cursor-pointer"
                   )}
                   style={{ transformStyle: "preserve-3d" }}
@@ -125,7 +125,7 @@ export function Content3DCarousel({
                       draggable={false}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                       รูปภาพ
                     </div>
                   )}
@@ -141,7 +141,7 @@ export function Content3DCarousel({
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
-            className="text-lg font-medium text-neutral-900 sm:text-xl dark:text-neutral-100"
+            className="text-lg font-medium text-foreground sm:text-xl"
           >
             {activeSlide?.label || activeSlide?.alt || "—"}
           </motion.p>
@@ -151,7 +151,7 @@ export function Content3DCarousel({
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: 0.05 }}
-              className="mt-1 text-sm text-slate-500 sm:text-base dark:text-neutral-400"
+              className="mt-1 text-sm text-muted-foreground sm:text-base"
             >
               {activeSlide.alt}
             </motion.p>
@@ -167,7 +167,7 @@ export function Content3DCarousel({
               aria-label={`ไปที่ ${slide.alt}`}
               className={cn(
                 "h-2 rounded-full transition-all",
-                index === active ? "w-6 bg-slate-800" : "w-2 bg-slate-300"
+                index === active ? "w-6 bg-foreground" : "w-2 bg-muted-foreground/40"
               )}
             />
           ))}

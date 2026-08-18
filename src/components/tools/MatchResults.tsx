@@ -6,7 +6,7 @@ import type { MemberRosterEntry } from "@/lib/memberRoster";
 
 function MemberChip({ member }: { member: MemberRosterEntry }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1 text-xs">
       <Image
         src={member.url}
         alt=""
@@ -31,8 +31,8 @@ export function MatchResults({
   return (
     <div className="space-y-4">
       {groups.map((group, index) => (
-        <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div key={index} className="rounded-xl border border-border bg-muted p-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {mode === "pair" ? `คู่ที่ ${index + 1}` : `กลุ่ม ${index + 1}`}
           </p>
           <div className="flex flex-wrap gap-2">

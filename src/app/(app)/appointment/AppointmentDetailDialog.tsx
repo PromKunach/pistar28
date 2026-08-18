@@ -175,17 +175,17 @@ export function AppointmentDetailDialog({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 28, mass: 0.8 }}
-            className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+            className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-6 pb-4 dark:border-neutral-800">
               <div>
                 <h2
                   id="appointment-detail-title"
-                  className="text-lg font-semibold text-slate-900 dark:text-neutral-100"
+                  className="text-lg font-semibold text-foreground"
                 >
                   นัดหมาย
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-neutral-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {appointment.title}
                 </p>
               </div>
@@ -201,8 +201,8 @@ export function AppointmentDetailDialog({
                 className={cn(
                   "px-3 py-2.5 text-sm font-medium transition-colors",
                   tab === "view"
-                    ? "border-b-2 border-slate-900 text-slate-900 dark:border-neutral-100 dark:text-neutral-100"
-                    : "text-slate-500 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-300"
+                    ? "border-b-2 border-foreground text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 รายละเอียด
@@ -213,8 +213,8 @@ export function AppointmentDetailDialog({
                 className={cn(
                   "px-3 py-2.5 text-sm font-medium transition-colors",
                   tab === "edit"
-                    ? "border-b-2 border-slate-900 text-slate-900 dark:border-neutral-100 dark:text-neutral-100"
-                    : "text-slate-500 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-300"
+                    ? "border-b-2 border-foreground text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 แก้ไข
@@ -230,33 +230,33 @@ export function AppointmentDetailDialog({
                   />
                   {appointmentTagLabel(appointment) ? (
                     <span
-                      className="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-neutral-400"
+                      className="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
                       style={{ borderColor: getAppointmentAccentColor(appointment) }}
                     >
                       {appointmentTagLabel(appointment)}
                     </span>
                   ) : null}
                   <div>
-                    <p className="text-base font-semibold text-slate-900 dark:text-neutral-100">
+                    <p className="text-base font-semibold text-foreground">
                       {appointment.title}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-neutral-500">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {appointmentDateLabel(appointment, seriesMembers)}
                     </p>
                   </div>
                   {appointmentDescriptionDisplay(appointment.description) ? (
-                    <p className="text-sm leading-relaxed text-slate-600 dark:text-neutral-400">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
                       {appointmentDescriptionDisplay(appointment.description)}
                     </p>
                   ) : (
-                    <p className="text-sm text-slate-400 dark:text-neutral-500">ไม่มีคำอธิบาย</p>
+                    <p className="text-sm text-muted-foreground">ไม่มีคำอธิบาย</p>
                   )}
                   {deleteBlockedOnCalendar ? (
                     <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
                       นัดหมายนี้มาจากบอร์ด — ลบได้ที่หน้าบอร์ดประกาศเท่านั้น
                     </p>
                   ) : orphanedBoardAppointment ? (
-                    <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                    <p className="rounded-xl border border-border bg-muted px-4 py-3 text-sm text-muted-foreground dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
                       นัดหมายนี้ไม่ได้เชื่อมกับบอร์ดแล้ว — ลบได้ที่นี่
                     </p>
                   ) : null}
@@ -282,12 +282,12 @@ export function AppointmentDetailDialog({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/40">
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/60 px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-neutral-100">
+                      <p className="text-sm font-medium text-foreground">
                         ช่วงวันที่
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         เปิดเพื่อเลือกวันเริ่มต้นและสิ้นสุด
                       </p>
                     </div>
@@ -313,14 +313,14 @@ export function AppointmentDetailDialog({
                       className={cn(
                         "relative h-6 w-11 shrink-0 rounded-full transition-colors",
                         draft.isRange
-                          ? "bg-slate-900 dark:bg-neutral-100"
-                          : "bg-slate-200 dark:bg-neutral-700"
+                          ? "bg-primary"
+                          : "bg-muted"
                       )}
                     >
                       <span
                         className={cn(
-                          "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform dark:bg-neutral-900",
-                          draft.isRange && "translate-x-5 dark:bg-neutral-950"
+                          "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-card transition-transform",
+                          draft.isRange && "translate-x-5"
                         )}
                       />
                     </button>
@@ -413,7 +413,7 @@ export function AppointmentDetailDialog({
 
                   {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-                  <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-neutral-800">
+                  <div className="flex justify-end gap-2 border-t border-border pt-4">
                     <Button type="button" variant="ghost" onClick={onClose} disabled={isSaving || isDeleting}>
                       ยกเลิก
                     </Button>
@@ -433,7 +433,7 @@ export function AppointmentDetailDialog({
                   ) : (
                     <>
                       {orphanedBoardAppointment ? (
-                        <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                        <p className="rounded-xl border border-border bg-muted px-4 py-3 text-sm text-muted-foreground dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
                           นัดหมายนี้ไม่ได้เชื่อมกับบอร์ดแล้ว — ลบได้ที่นี่
                         </p>
                       ) : null}

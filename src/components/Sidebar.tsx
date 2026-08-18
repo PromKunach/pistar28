@@ -16,10 +16,10 @@ import {
   Pin,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ContactPanel } from "@/components/ContactPanel";
 import { AboutPanel } from "@/components/AboutPanel";
+import { ThemeLogo } from "@/components/ThemeLogo";
 
 // ---------------------------------------------
 // Config — edit this to reshape the nav
@@ -214,7 +214,7 @@ export default function Sidebar({
 
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 flex h-dvh w-[280px] flex-col border-r border-slate-200 bg-white
+          fixed inset-y-0 left-0 z-40 flex h-dvh w-[280px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground
           transition-transform duration-200 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:static md:translate-x-0 md:transition-[width]
@@ -222,14 +222,14 @@ export default function Sidebar({
         `}
       >
         {/* Brand / account switcher */}
-        <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white">
-            <Image src="/logo_img_white.png" alt="logo" width={80} height={80} />
+        <div className="flex items-center gap-2 border-b border-sidebar-border px-4 py-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+            <ThemeLogo variant="icon" alt="Pistar28" width={40} height={40} className="h-10 w-10 object-contain" />
           </div>
 
-          <span className={`truncate text-sm text-slate-800 font-sans ${labelClass}`}>
+          <span className={`truncate text-sm text-sidebar-foreground font-sans ${labelClass}`}>
           </span>
-          <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-slate-400 ${labelClass}`} />
+          <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-muted-foreground ${labelClass}`} />
 
           {/* Close button — mobile only */}
           <button
@@ -237,7 +237,7 @@ export default function Sidebar({
             onClick={onCloseMobile}
             aria-label="Close menu"
           >
-            <X className="h-5 w-5 text-slate-500" />
+            <X className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
 
@@ -248,7 +248,7 @@ export default function Sidebar({
           {NAV_SECTIONS.map((section, i) => (
             <div key={i} className={i === 0 ? "" : "mt-5"}>
               {section.title && (
-                <p className={`mb-1 px-2 text-xs uppercase tracking-wide text-slate-400 ${labelClass}`}>
+                <p className={`mb-1 px-2 text-xs uppercase tracking-wide text-muted-foreground ${labelClass}`}>
                   {section.title}
                 </p>
               )}
@@ -259,8 +259,8 @@ export default function Sidebar({
                   // Collapsed desktop rail: don't allow expand, behave like a plain link
                   const canExpand = item.expandable && !desktopCollapsed;
                   const navItemClass = isActive
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-700 hover:bg-slate-50";
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
                   return (
                     <li key={item.label}>
@@ -273,7 +273,7 @@ export default function Sidebar({
                           <item.icon className="h-[18px] w-[18px] shrink-0" />
                           <span className="flex-1 truncate text-left">{item.label}</span>
                           <ChevronRight
-                            className={`h-3.5 w-3.5 shrink-0 text-slate-300 transition-transform duration-200 group-hover:text-slate-400 ${
+                            className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:text-sidebar-accent-foreground ${
                               isOpen ? "rotate-90" : ""
                             }`}
                           />
@@ -304,7 +304,7 @@ export default function Sidebar({
                           <span className={`flex-1 truncate ${labelClass}`}>{item.label}</span>
                           {item.expandable && (
                             <ChevronRight
-                              className={`h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-slate-400 ${labelClass}`}
+                              className={`h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-sidebar-accent-foreground ${labelClass}`}
                             />
                           )}
                         </Link>
@@ -328,8 +328,8 @@ export default function Sidebar({
                                   onOpenAbout={openAbout}
                                   className={`block w-full rounded-md py-1.5 text-left text-sm ${
                                     isSubActive
-                                      ? "bg-slate-100 text-slate-900"
-                                      : "text-slate-500 hover:text-slate-800"
+                                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                                      : "text-muted-foreground hover:text-sidebar-foreground"
                                   }`}
                                 />
                               </li>
@@ -346,10 +346,10 @@ export default function Sidebar({
           ))}
         </nav>
 
-        <div className="hidden border-t border-slate-100 p-3 md:block">
+        <div className="hidden border-t border-sidebar-border p-3 md:block">
           <button
             onClick={onToggleDesktop}
-            className="flex w-full items-center  gap-2 rounded-lg px-2.5 py-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             aria-label="Toggle sidebar width"
           >
             <PanelLeftClose

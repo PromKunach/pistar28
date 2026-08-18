@@ -85,14 +85,14 @@ export function PrivacyPanel({ email }: { email: string }) {
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">ความเป็นส่วนตัว</h2>
-        <p className="mt-1 text-sm text-slate-500">จัดการรหัสผ่านและเซสชัน</p>
+        <h2 className="text-lg font-semibold text-foreground">ความเป็นส่วนตัว</h2>
+        <p className="mt-1 text-sm text-muted-foreground">จัดการรหัสผ่านและเซสชัน</p>
       </div>
 
       <form onSubmit={(e) => void handlePasswordSubmit(e)} className="space-y-4">
         <div>
-          <h3 className="text-sm font-medium text-slate-900">เปลี่ยนรหัสผ่าน</h3>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <h3 className="text-sm font-medium text-foreground">เปลี่ยนรหัสผ่าน</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             ยืนยันรหัสผ่านปัจจุบันก่อนเปลี่ยนรหัสใหม่
           </p>
         </div>
@@ -146,10 +146,10 @@ export function PrivacyPanel({ email }: { email: string }) {
         </Button>
       </form>
 
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-sm font-medium text-slate-900">สถานะเซสชัน</p>
-        <p className="mt-1 text-sm text-slate-600">เข้าสู่ระบบอยู่</p>
-        <p className="mt-0.5 truncate text-xs text-slate-500">{email}</p>
+      <div className="rounded-lg border border-border bg-muted px-4 py-3">
+        <p className="text-sm font-medium text-foreground">สถานะเซสชัน</p>
+        <p className="mt-1 text-sm text-muted-foreground">เข้าสู่ระบบอยู่</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{email}</p>
       </div>
     </div>
   );

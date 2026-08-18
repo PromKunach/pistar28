@@ -439,9 +439,9 @@ function ImageSizeBadge({ meta }: { meta: ImageUploadMeta }) {
   )
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
       <span>
-        <span className="font-medium text-neutral-700 dark:text-neutral-300">
+        <span className="font-medium text-foreground dark:text-neutral-300">
           {formatFileSize(meta.compressedSize)}
         </span>
         {" · "}
@@ -467,10 +467,10 @@ function AuthorProfile({
   return (
     <div className="flex max-w-[180px] items-center gap-2 sm:max-w-[220px]">
       <div className="min-w-0 text-right">
-        <p className="truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
+        <p className="truncate text-sm font-medium text-foreground">
           {author.displayName}
         </p>
-        <p className="truncate text-xs text-neutral-500">{subtitle}</p>
+        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
       {author.avatarUrl ? (
         <img
@@ -479,7 +479,7 @@ function AuthorProfile({
           className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
         />
       ) : (
-        <div className="h-9 w-9 shrink-0 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+        <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
       )}
     </div>
   )
@@ -582,7 +582,7 @@ function SelectorDropdown({
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={onToggle}
-          className="flex h-10 w-full items-center justify-between rounded-md border border-neutral-200 bg-gray-50 px-3 text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700"
+          className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-gray-50 px-3 text-sm text-foreground transition-colors hover:bg-muted dark:border-neutral-700 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700"
         >
           <span className="flex min-w-0 items-center gap-2">
             {valuePreview}
@@ -590,7 +590,7 @@ function SelectorDropdown({
           </span>
           <ChevronDownIcon
             className={cn(
-              "h-4 w-4 shrink-0 text-neutral-500 transition-transform",
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
               open && "rotate-180"
             )}
           />
@@ -604,7 +604,7 @@ function SelectorDropdown({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-neutral-200 bg-background p-1 shadow-lg dark:border-neutral-700"
+              className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-background p-1 shadow-lg dark:border-neutral-700"
             >
               {children}
             </motion.ul>
@@ -694,7 +694,7 @@ function SpectrumPicker({
           else return
           event.preventDefault()
         }}
-        className="relative h-28 w-full cursor-crosshair touch-none rounded-md border border-neutral-200 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700"
+        className="relative h-28 w-full cursor-crosshair touch-none rounded-md border border-border outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700"
         style={{
           background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, ${hsvToHex(hue, 1, 1)})`,
         }}
@@ -728,7 +728,7 @@ function SpectrumPicker({
           setHue(nextHue)
           onChange(hsvToHex(nextHue, s || 1, v || 1))
         }}
-        className="relative h-3.5 w-full cursor-pointer touch-none rounded-full border border-neutral-200 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700"
+        className="relative h-3.5 w-full cursor-pointer touch-none rounded-full border border-border outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700"
         style={{
           background:
             "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
@@ -811,7 +811,7 @@ function ColorTargetPicker({
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
-          className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-neutral-200 bg-gray-50 px-3 text-sm text-neutral-800 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700"
+          className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-gray-50 px-3 text-sm text-foreground transition-colors hover:bg-muted dark:border-neutral-700 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700"
         >
           <span className="flex min-w-0 items-center gap-2">
             <span
@@ -824,7 +824,7 @@ function ColorTargetPicker({
           </span>
           <ChevronDownIcon
             className={cn(
-              "h-4 w-4 shrink-0 text-neutral-500 transition-transform",
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
               open && "rotate-180"
             )}
           />
@@ -839,9 +839,9 @@ function ColorTargetPicker({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-30 mt-1 w-[17rem] space-y-3 rounded-lg border border-neutral-200 bg-background p-3 shadow-lg dark:border-neutral-700"
+              className="absolute z-30 mt-1 w-[17rem] space-y-3 rounded-lg border border-border bg-background p-3 shadow-lg dark:border-neutral-700"
             >
-              <div className="grid grid-cols-2 gap-1 rounded-md bg-neutral-100 p-1 dark:bg-neutral-900">
+              <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 dark:bg-neutral-900">
                 {(["text", "card"] as ColorTarget[]).map((option) => (
                   <button
                     key={option}
@@ -850,8 +850,8 @@ function ColorTargetPicker({
                     className={cn(
                       "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
                       target === option
-                        ? "bg-background text-neutral-900 shadow-sm dark:text-neutral-100"
-                        : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                        ? "bg-background text-foreground shadow-sm dark:text-neutral-100"
+                        : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-neutral-200"
                     )}
                   >
                     <span
@@ -906,7 +906,7 @@ function ColorTargetPicker({
                     else setHexDraft(activeColor)
                   }}
                   spellCheck={false}
-                  className="h-9 min-w-0 flex-1 rounded-md border border-neutral-200 bg-background px-2 font-mono text-xs text-neutral-800 uppercase outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-200 dark:focus-visible:ring-neutral-600"
+                  className="h-9 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground uppercase outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-200 dark:focus-visible:ring-neutral-600"
                   placeholder="#000000"
                   aria-label={`ค่าสี ${COLOR_TARGET_LABELS[target]}`}
                 />
@@ -916,7 +916,7 @@ function ColorTargetPicker({
                 className={cn(
                   "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-[11px]",
                   readable
-                    ? "bg-neutral-100 text-neutral-500 dark:bg-neutral-900"
+                    ? "bg-muted text-muted-foreground dark:bg-neutral-900"
                     : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                 )}
               >
@@ -935,7 +935,7 @@ function ColorTargetPicker({
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-neutral-500">ธีม</p>
+                <p className="text-[11px] font-medium text-muted-foreground">ธีม</p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {THEME_PAIRS.map((pair) => (
                     <button
@@ -949,7 +949,7 @@ function ColorTargetPicker({
                         "rounded-md border px-2 py-1.5 text-[11px] font-medium transition-transform hover:scale-[1.03]",
                         matchedTheme?.label === pair.label
                           ? "border-neutral-900 dark:border-neutral-100"
-                          : "border-neutral-200 dark:border-neutral-700"
+                          : "border-border"
                       )}
                       style={{
                         backgroundColor: pair.cardColor,
@@ -962,14 +962,14 @@ function ColorTargetPicker({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
+              <div className="flex items-center justify-between gap-2 border-t border-border pt-2 dark:border-neutral-700">
                 <button
                   type="button"
                   onClick={() => {
                     onTextColorChange(cardColor)
                     onCardColorChange(textColor)
                   }}
-                  className="text-[11px] text-neutral-500 underline-offset-2 hover:underline"
+                  className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
                 >
                   สลับสี
                 </button>
@@ -979,7 +979,7 @@ function ColorTargetPicker({
                     onTextColorChange(DEFAULT_TEXT_COLOR)
                     onCardColorChange(DEFAULT_CARD_COLOR)
                   }}
-                  className="text-[11px] text-neutral-500 underline-offset-2 hover:underline"
+                  className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
                 >
                   รีเซ็ตทั้งคู่
                 </button>
@@ -1033,7 +1033,7 @@ function ImageCropper({
     <div className="space-y-3">
       <div
         ref={frameRef}
-        className="relative aspect-[16/10] cursor-grab touch-none overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100 active:cursor-grabbing dark:border-neutral-700 dark:bg-neutral-900"
+        className="relative aspect-[16/10] cursor-grab touch-none overflow-hidden rounded-lg border border-border bg-muted active:cursor-grabbing dark:border-neutral-700 dark:bg-neutral-900"
         onPointerDown={(event) => {
           event.preventDefault()
           frameRef.current?.setPointerCapture(event.pointerId)
@@ -1080,10 +1080,10 @@ function ImageCropper({
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="image-zoom" className="text-xs text-neutral-500">
+          <Label htmlFor="image-zoom" className="text-xs text-muted-foreground">
             ซูม / ครอบตัด
           </Label>
-          <span className="text-xs tabular-nums text-neutral-500">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {focus.zoom.toFixed(1)}x
           </span>
         </div>
@@ -1102,7 +1102,7 @@ function ImageCropper({
         <button
           type="button"
           onClick={() => onChange(DEFAULT_IMAGE_FOCUS)}
-          className="text-xs text-neutral-500 underline-offset-2 hover:underline"
+          className="text-xs text-muted-foreground underline-offset-2 hover:underline"
         >
           รีเซ็ตตำแหน่ง
         </button>
@@ -1343,14 +1343,14 @@ function AddNoteDialog({
                 }
               })()
             }}
-            className="relative z-10 max-h-[90vh] w-full max-w-3xl space-y-5 overflow-y-auto rounded-2xl border border-neutral-200 bg-background p-6 shadow-xl dark:border-neutral-800"
+            className="relative z-10 max-h-[90vh] w-full max-w-3xl space-y-5 overflow-y-auto rounded-2xl border border-border bg-background p-6 shadow-xl dark:border-neutral-800"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
+                <h2 className="text-lg font-semibold text-foreground">
                   {isEditing ? "แก้ไขโน้ต" : "โน้ตใหม่"}
                 </h2>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-muted-foreground">
                   {isEditing
                     ? canEditRecord
                       ? "ปรับรายละเอียดของโน้ตนี้ แล้วบันทึกการเปลี่ยนแปลง"
@@ -1362,11 +1362,11 @@ function AddNoteDialog({
                 {authorReady && author ? (
                   <AuthorProfile author={author} />
                 ) : authorReady ? (
-                  <p className="max-w-[140px] text-right text-xs text-neutral-500">
+                  <p className="max-w-[140px] text-right text-xs text-muted-foreground">
                     เข้าสู่ระบบเพื่อโพสต์
                   </p>
                 ) : (
-                  <div className="h-9 w-28 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800" />
+                  <div className="h-9 w-28 animate-pulse rounded-lg bg-muted" />
                 )}
                 <Button
                   type="button"
@@ -1383,7 +1383,7 @@ function AddNoteDialog({
             <div className="flex flex-col gap-6 md:grid md:grid-cols-2">
               <div className="order-1 space-y-2 md:order-2 md:sticky md:top-0">
                 <Label>ตัวอย่างสด</Label>
-                <div className="h-[22rem] overflow-hidden rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 p-2 dark:border-neutral-800 dark:bg-neutral-900/40">
+                <div className="h-[22rem] overflow-hidden rounded-xl border border-dashed border-border bg-muted/50 p-2 dark:border-neutral-800 dark:bg-neutral-900/40">
                   <BentoCard
                     name={previewName}
                     description={previewDescription}
@@ -1405,7 +1405,7 @@ function AddNoteDialog({
                     clickable={false}
                   />
                 </div>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   อัปเดตตามที่พิมพ์ — นี่คือหน้าตาการ์ดบนบอร์ด
                 </p>
               </div>
@@ -1457,8 +1457,8 @@ function AddNoteDialog({
                             className={cn(
                               "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                               isSelected
-                                ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                                : "text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-900"
+                                ? "bg-muted text-foreground dark:bg-neutral-800 dark:text-neutral-100"
+                                : "text-foreground hover:bg-muted dark:text-neutral-300 dark:hover:bg-neutral-900"
                             )}
                           >
                             <option.Icon className="h-4 w-4" />
@@ -1503,26 +1503,26 @@ function AddNoteDialog({
 
                   {isCompressing ? (
                     <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 bg-gray-50 px-4 py-8 text-center dark:border-neutral-700 dark:bg-zinc-800">
-                      <Loader2 className="h-6 w-6 animate-spin text-neutral-600 dark:text-neutral-300" />
-                      <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">
                         กำลังบีบอัดรูป…
                       </p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         ปรับขนาดและแปลงเป็น WebP
                       </p>
                     </div>
                   ) : imageUrl ? (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-gray-50 p-3 dark:border-neutral-700 dark:bg-zinc-800">
+                      <div className="flex items-center gap-3 rounded-lg border border-border bg-gray-50 p-3 dark:border-neutral-700 dark:bg-zinc-800">
                         <div className="min-w-0 flex-1 space-y-1">
-                          <p className="truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {imageName}
                           </p>
                           {imageMeta && <ImageSizeBadge meta={imageMeta} />}
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-xs text-neutral-500 underline-offset-2 hover:underline"
+                            className="text-xs text-muted-foreground underline-offset-2 hover:underline"
                           >
                             เปลี่ยนรูป
                           </button>
@@ -1568,22 +1568,22 @@ function AddNoteDialog({
                       className={cn(
                         "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors",
                         isDragging
-                          ? "border-neutral-800 bg-neutral-100 dark:border-neutral-200 dark:bg-neutral-800"
-                          : "border-neutral-300 bg-gray-50 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+                          ? "border-neutral-800 bg-muted dark:border-border dark:bg-neutral-800"
+                          : "border-neutral-300 bg-gray-50 hover:bg-muted dark:border-neutral-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
                       )}
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200/70 dark:bg-neutral-700">
                         {isDragging ? (
-                          <Upload className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
+                          <Upload className="h-5 w-5 text-foreground" />
                         ) : (
-                          <ImagePlus className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
+                          <ImagePlus className="h-5 w-5 text-foreground" />
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                        <p className="text-sm font-medium text-foreground">
                           ลากรูปมาวาง หรือคลิกเพื่อเลือก
                         </p>
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-muted-foreground">
                           PNG, JPG หรือ WebP · สูงสุด {formatFileSize(MAX_UPLOAD_BYTES)} ·
                           บีบอัดเป็น WebP อัตโนมัติ
                         </p>
@@ -1599,7 +1599,7 @@ function AddNoteDialog({
                 <div className="me-auto flex items-center gap-2">
                   {confirmDelete ? (
                     <>
-                      <span className="text-xs text-neutral-500">
+                      <span className="text-xs text-muted-foreground">
                         ลบโน้ตนี้ถาวร?
                       </span>
                       <Button
@@ -1813,10 +1813,10 @@ function BentoDemo() {
     <div className="container space-y-4 p-[20px] no-scrollbar">
       <div className="flex items-center justify-between gap-4 no-scrollbar">
         <div className="no-scrollbar">
-          <h1 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
+          <h1 className="text-2xl font-semibold text-foreground">
             โน้ตประกาศ
           </h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             อยู่ระหว่างการพัฒนา
           </p>
         </div>
@@ -1834,7 +1834,7 @@ function BentoDemo() {
         ) : loadError ? (
           <p className="col-span-full text-sm text-red-600 dark:text-red-400">{loadError}</p>
         ) : features.length === 0 ? (
-          <p className="col-span-full text-sm text-neutral-500">
+          <p className="col-span-full text-sm text-muted-foreground">
             ยังไม่มีโน้ตประกาศ เพิ่มการ์ดแรกได้เลย
           </p>
         ) : (

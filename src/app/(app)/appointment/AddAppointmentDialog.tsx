@@ -117,17 +117,17 @@ export function AddAppointmentDialog({
                 }
               })()
             }}
-            className="relative z-10 max-h-[90vh] w-full max-w-lg space-y-5 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl no-scrollbar dark:border-neutral-800 dark:bg-neutral-900"
+            className="relative z-10 max-h-[90vh] w-full max-w-lg space-y-5 overflow-y-auto rounded-2xl border border-slate-200 bg-card p-6 shadow-xl no-scrollbar dark:border-neutral-800 dark:bg-neutral-900"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2
                   id="add-appointment-title"
-                  className="text-lg font-semibold text-slate-900 dark:text-neutral-100"
+                  className="text-lg font-semibold text-foreground"
                 >
                   เพิ่มนัดหมายใหม่
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-neutral-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   กรอกรายละเอียดนัดหมายของคุณ
                 </p>
               </div>
@@ -147,10 +147,10 @@ export function AddAppointmentDialog({
               />
             </div>
 
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/40">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/60 px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-neutral-100">ช่วงวันที่</p>
-                <p className="text-xs text-slate-500 dark:text-neutral-500">
+                <p className="text-sm font-medium text-foreground">ช่วงวันที่</p>
+                <p className="text-xs text-muted-foreground">
                   เปิดเพื่อเลือกวันเริ่มต้นและสิ้นสุด
                 </p>
               </div>
@@ -175,14 +175,14 @@ export function AddAppointmentDialog({
                 className={cn(
                   "relative h-6 w-11 shrink-0 rounded-full transition-colors",
                   draft.isRange
-                    ? "bg-slate-900 dark:bg-neutral-100"
-                    : "bg-slate-200 dark:bg-neutral-700"
+                    ? "bg-primary"
+                    : "bg-muted"
                 )}
               >
                 <span
                   className={cn(
-                    "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform dark:bg-neutral-900",
-                    draft.isRange && "translate-x-5 dark:bg-neutral-950"
+                    "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-card transition-transform",
+                    draft.isRange && "translate-x-5"
                   )}
                 />
               </button>
@@ -270,7 +270,7 @@ export function AddAppointmentDialog({
               />
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-neutral-800">
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
               {submitError && (
                 <p className="mr-auto text-sm text-red-600 dark:text-red-400">{submitError}</p>
               )}

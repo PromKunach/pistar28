@@ -47,7 +47,7 @@ export function DishRow({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
+    <div className="rounded-xl border border-border bg-card p-3">
       <div className="flex gap-2">
         <div className="flex-1">
           <Input
@@ -69,7 +69,7 @@ export function DishRow({
         <button
           type="button"
           onClick={onRemove}
-          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600"
+          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-red-600"
           aria-label="ลบเมนู"
         >
           <X className="h-4 w-4" />
@@ -86,8 +86,8 @@ export function DishRow({
               className={cn(
                 "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
                 selected
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-muted text-muted-foreground hover:bg-muted"
               )}
             >
               {getPersonDisplayName(person, index)}

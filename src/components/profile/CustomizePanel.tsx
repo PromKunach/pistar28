@@ -49,15 +49,15 @@ export function CustomizePanel({
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">ปรับแต่งการ์ด</h2>
-        <p className="mt-1 text-sm text-slate-500">เปลี่ยนสี สติกเกอร์ และ bio บนการ์ด</p>
+        <h2 className="text-lg font-semibold text-foreground">ปรับแต่งการ์ด</h2>
+        <p className="mt-1 text-sm text-muted-foreground">เปลี่ยนสี สติกเกอร์ และ bio บนการ์ด</p>
       </div>
 
       <div>
-        <label htmlFor="profile-bio" className="text-sm font-medium text-slate-900">
+        <label htmlFor="profile-bio" className="text-sm font-medium text-foreground">
           Bio
         </label>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           แสดงบนด้านหลังการ์ด สูงสุด {PROFILE_BIO_MAX_LENGTH} ตัวอักษร
         </p>
         <textarea
@@ -67,10 +67,10 @@ export function CustomizePanel({
           onChange={(event) =>
             onBioChange(event.target.value.slice(0, PROFILE_BIO_MAX_LENGTH))
           }
-          className="mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+          className="mt-2 w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           placeholder="เขียนเกี่ยวกับตัวคุณ..."
         />
-        <p className="mt-1 text-right text-xs text-slate-400">
+        <p className="mt-1 text-right text-xs text-muted-foreground">
           {bio.length}/{PROFILE_BIO_MAX_LENGTH}
         </p>
       </div>
@@ -100,8 +100,8 @@ export function CustomizePanel({
           <ImagePlus className="h-4 w-4" />
           {uploading ? "กำลังอัปโหลด..." : "เพิ่มสติกเกอร์"}
         </Button>
-        <p className="mt-2 text-xs text-slate-500">พื้นที่สติกเกอร์: {formatStickerQuota(used)}</p>
-        <p className="mt-1 text-xs text-slate-400">รองรับ PNG และ JPG สูงสุด 1 MB ต่อผู้ใช้ (รวมทุกสติกเกอร์)</p>
+        <p className="mt-2 text-xs text-muted-foreground">พื้นที่สติกเกอร์: {formatStickerQuota(used)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">รองรับ PNG และ JPG สูงสุด 1 MB ต่อผู้ใช้ (รวมทุกสติกเกอร์)</p>
       </div>
 
       {saveMessage && (
@@ -118,7 +118,7 @@ export function CustomizePanel({
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
         <Button type="button" onClick={onSave} disabled={saving}>
           {saving ? "กำลังบันทึก..." : "บันทึก"}
         </Button>

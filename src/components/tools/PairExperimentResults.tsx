@@ -7,7 +7,7 @@ import type { PairFrequencyEntry } from "@/lib/matchMaker";
 
 function MemberChip({ member }: { member: MemberRosterEntry }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1 text-xs">
       <Image
         src={member.url}
         alt=""
@@ -31,7 +31,7 @@ export function PairExperimentResults({
 }) {
   if (entries.length === 0) {
     return (
-      <p className="text-sm text-slate-500">ไม่มีคู่ที่จับได้จากการทดลอง</p>
+      <p className="text-sm text-muted-foreground">ไม่มีคู่ที่จับได้จากการทดลอง</p>
     );
   }
 
@@ -45,14 +45,14 @@ export function PairExperimentResults({
         return (
           <div
             key={`${entry.memberA}|${entry.memberB}`}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted p-3"
           >
             <div className="flex flex-wrap items-center gap-2">
               <MemberChip member={memberA} />
-              <span className="text-xs text-slate-400">+</span>
+              <span className="text-xs text-muted-foreground">+</span>
               <MemberChip member={memberB} />
             </div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-foreground">
               {entry.count}/{rounds} ครั้ง
             </p>
           </div>

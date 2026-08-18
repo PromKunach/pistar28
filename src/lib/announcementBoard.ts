@@ -152,6 +152,11 @@ export const EMPTY_BOARD: BoardContent = {
 
 export const DEFAULT_BLOCK_COLOR = "#1f2937"
 export const DEFAULT_BLOCK_FONT_SIZE = 18
+
+export function isDefaultBlockColor(color: string | undefined | null) {
+  if (!color) return true
+  return color.trim().toLowerCase() === DEFAULT_BLOCK_COLOR.toLowerCase()
+}
 export const DEFAULT_BLOCK_WIDTH = 260 / BOARD_WIDTH
 export const DEFAULT_COUNTER_WIDTH = 220 / BOARD_WIDTH
 export const DEFAULT_COMMENT_WIDTH = 320 / BOARD_WIDTH

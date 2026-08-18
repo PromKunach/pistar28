@@ -60,11 +60,11 @@ function writeProfileCache(cache: ProfileCache) {
 function ProfileSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-6 lg:flex-row">
-      <div className="h-80 animate-pulse rounded-xl bg-slate-100 lg:w-[45%]" />
+      <div className="h-80 animate-pulse rounded-xl bg-muted lg:w-[45%]" />
       <div className="flex-1 space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded bg-slate-100" />
-        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
-        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-32 animate-pulse rounded-xl bg-muted" />
+        <div className="h-32 animate-pulse rounded-xl bg-muted" />
       </div>
     </div>
   );
@@ -289,7 +289,7 @@ export default function ProfilePage() {
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section
         className={cn(
-          "flex shrink-0 items-center justify-center overflow-visible border-b border-slate-100 bg-slate-50/50 p-4 lg:w-[45%] lg:border-b-0 lg:border-r",
+          "flex shrink-0 items-center justify-center overflow-visible border-b border-border bg-muted/50 p-4 lg:w-[45%] lg:border-b-0 lg:border-r",
           section !== "customize" && "py-6"
         )}
       >

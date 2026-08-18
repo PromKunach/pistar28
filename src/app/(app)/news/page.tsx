@@ -21,16 +21,16 @@ function FeedSkeleton() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={index}
-          className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+          className="rounded-2xl border border-border bg-card p-4"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+            <div className="h-10 w-10 rounded-full bg-muted" />
             <div className="space-y-2">
-              <div className="h-3 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
-              <div className="h-2 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+              <div className="h-3 w-28 rounded bg-muted" />
+              <div className="h-2 w-20 rounded bg-muted" />
             </div>
           </div>
-          <div className="mt-4 h-16 rounded-xl bg-neutral-100 dark:bg-neutral-800" />
+          <div className="mt-4 h-16 rounded-xl bg-muted" />
         </div>
       ))}
     </div>
@@ -158,10 +158,10 @@ export default function NewsFeedPage() {
   return (
     <div className="mx-auto max-w-[680px] px-4 py-6">
       <header className="mb-4">
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+        <h1 className="text-2xl font-bold text-foreground">
           ฟีดข่าวสาร
         </h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           แชร์ข่าวสารและภาพกิจกรรมกับสมาชิก
         </p>
       </header>
@@ -170,14 +170,14 @@ export default function NewsFeedPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/80"
+          className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted"
         >
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted">
             {user.avatarUrl ? (
               <Image src={user.avatarUrl} alt="" fill className="object-cover" sizes="40px" />
             ) : null}
           </div>
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+          <span className="text-sm text-muted-foreground">
             คุณกำลังคิดอะไรอยู่?
           </span>
         </button>
@@ -201,8 +201,8 @@ export default function NewsFeedPage() {
       {isLoading ? <FeedSkeleton /> : null}
 
       {emptyState ? (
-        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-900/50">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <div className="rounded-2xl border border-dashed border-border bg-muted/50 px-6 py-12 text-center">
+          <p className="text-sm text-muted-foreground">
             ยังไม่มีโพสต์ — เป็นคนแรกที่แชร์ข่าวสาร
           </p>
           {user ? (
@@ -228,7 +228,7 @@ export default function NewsFeedPage() {
 
       {hasMore ? <div ref={sentinelRef} className="h-8" aria-hidden /> : null}
       {isLoadingMore ? (
-        <p className="py-4 text-center text-sm text-neutral-500">กำลังโหลด...</p>
+        <p className="py-4 text-center text-sm text-muted-foreground">กำลังโหลด...</p>
       ) : null}
 
       {user ? (

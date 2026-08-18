@@ -66,7 +66,7 @@ function PaperDateCardContent({
             {monthYearLabel}
           </motion.p>
         ) : (
-          <p className={cn("font-medium text-slate-600 dark:text-neutral-400", monthTextClass)}>
+          <p className={cn("font-medium text-muted-foreground", monthTextClass)}>
             {monthYearLabel}
           </p>
         )}
@@ -90,7 +90,7 @@ function PaperDateCardContent({
               className={cn(
                 "font-semibold tracking-tight",
                 dayTextClass,
-                !themed && "text-slate-900 dark:text-neutral-100"
+                !themed && "text-foreground"
               )}
             >
               {date.getDate()}
@@ -106,7 +106,7 @@ function PaperDateCardContent({
             {weekdayLabel}
           </motion.p>
         ) : (
-          <p className={cn("mt-3 text-slate-500 dark:text-neutral-500", weekdayTextClass)}>
+          <p className={cn("mt-3 text-muted-foreground", weekdayTextClass)}>
             {weekdayLabel}
           </p>
         )}
@@ -137,7 +137,7 @@ function PaperDateCardContent({
             {monthYearLabel}
           </motion.p>
         ) : (
-          <p className={cn("font-medium text-slate-600 dark:text-neutral-400", monthTextClass)}>
+          <p className={cn("font-medium text-muted-foreground", monthTextClass)}>
             {monthYearLabel}
           </p>
         )}
@@ -152,7 +152,7 @@ function PaperDateCardContent({
         ) : (
           <p
             className={cn(
-              "mt-2 font-semibold tracking-tight text-slate-900 dark:text-neutral-100",
+              "mt-2 font-semibold tracking-tight text-foreground",
               dayTextClass
             )}
           >
@@ -168,7 +168,7 @@ function PaperDateCardContent({
             {weekdayLabel}
           </motion.p>
         ) : (
-          <p className={cn("mt-3 text-slate-500 dark:text-neutral-500", weekdayTextClass)}>
+          <p className={cn("mt-3 text-muted-foreground", weekdayTextClass)}>
             {weekdayLabel}
           </p>
         )}
@@ -324,7 +324,7 @@ export function PaperDateCard({
         ) : (
           <div
             className={cn(
-              "w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900",
+              "w-full overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm dark:border-neutral-800 dark:bg-neutral-900",
               topPadding
             )}
           >

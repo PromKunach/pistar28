@@ -26,7 +26,7 @@ export default function AppLayoutWrapper({
     return <>{children}</>;
   }
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-white text-slate-900">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
       <Sidebar
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}

@@ -154,7 +154,7 @@ export default function BillSplitterPage() {
         </section>
 
         <section className="mt-8 space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">คน</h2>
+          <h2 className="text-lg font-semibold text-foreground">คน</h2>
           <div className="space-y-2">
             {people.map((person, index) => (
               <PersonRow
@@ -181,7 +181,7 @@ export default function BillSplitterPage() {
         </section>
 
         <section className="mt-8 space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">เมนูที่ไม่ได้กินทุกคน (ถ้ามี)</h2>
+          <h2 className="text-lg font-semibold text-foreground">เมนูที่ไม่ได้กินทุกคน (ถ้ามี)</h2>
           <div className="space-y-2">
             {dishes.map((dish) => (
               <DishRow
@@ -208,7 +208,7 @@ export default function BillSplitterPage() {
           <Button type="button" variant="outline" size="sm" onClick={addDish}>
             + เพิ่มเมนู
           </Button>
-          <div className="space-y-1 text-sm text-slate-600">
+          <div className="space-y-1 text-sm text-muted-foreground">
             <p>รวมเมนูที่ไม่ได้กินทุกคน: {assignedTotal.toLocaleString("th-TH")} บาท</p>
             {remainder !== null ? (
               <p>
@@ -228,7 +228,7 @@ export default function BillSplitterPage() {
               setResult(null);
               setError(null);
             }}
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {ROUND_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
