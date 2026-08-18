@@ -82,21 +82,21 @@ export function HeroStats({
     <div className="relative z-10 w-full min-w-0">
       <HeroProgramCountdown initialParts={initialCountdown} />
 
-      <div className="grid w-full grid-cols-1 gap-3 pt-2 sm:grid-cols-3 sm:gap-4 sm:pt-4">
+      <div className="grid w-full grid-cols-1 gap-3 pt-2 sm:grid-cols-3 sm:gap-4 sm:pt-14">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="flex w-full min-w-0 items-center rounded-xl bg-white shadow-xl ring-1 ring-slate-200"
+            className="flex w-full min-w-0 items-center rounded-xl bg-[#171717] pl-2 shadow-[0_8px_24px_rgba(0,0,0,0.12),inset_0_1px_0_0_rgba(255,255,255,0.7),inset_0_0_0_5px_rgba(255,255,255,0.08),inset_0_12px_24px_rgba(255,255,255,0.04)]"
           >
             <div className="flex w-full min-w-0 flex-col items-start rounded-xl border border-transparent px-4 py-3.5 text-left sm:px-4 sm:py-5">
-              <span className="text-xs text-slate-500 sm:text-sm dark:text-neutral-400">
+              <span className="text-xs text-slate-100 sm:text-sm dark:text-neutral-400">
                 {stat.label}
               </span>
               <NumberTicker
-                className="text-2xl font-semibold tabular-nums text-neutral-900 sm:text-3xl dark:text-neutral-100"
+                className="text-2xl font-semibold tabular-nums  text-slate-100 sm:text-3xl dark:text-neutral-100"
                 value={stat.value}
               />
-              <span className="text-xs text-slate-500 sm:text-sm dark:text-neutral-400">
+              <span className="text-xs  text-slate-100 sm:text-sm dark:text-neutral-400">
                 {stat.suffix}
               </span>
             </div>

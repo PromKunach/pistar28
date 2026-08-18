@@ -11,6 +11,7 @@ import { ContentIntroBand } from "@/components/landing/ContentIntroBand";
 import { ContentFeatureSection } from "@/components/landing/ContentFeatureSection";
 import { Content3DCarousel } from "@/components/landing/Content3DCarousel";
 import { HeroStats } from "@/components/landing/HeroStats";
+import { MorphingText } from "@/components/ui/morphing-text"
 import { getCountdownParts, getDaysSinceSemesterOpen } from "@/components/landing/hero-stats-utils";
 // Generates pfp_1.JPG ... pfp_32.JPG public URLs from the "images" bucket, "pfp/" folder
 const PFP_COUNT = 32;
@@ -114,7 +115,7 @@ export default async function DashboardPage() {
 
       <Content3DCarousel
         title="สมาชิก PI*28"
-        subline="รวมนักเรียนจากจังหวัด ราชบุรี สุพรรณบุรี ประจวบคีรีขันธ์ กาญจนบุรี"
+        subline="ทั้งหมด 32 คน"
         slides={profiles.map((profile) => ({
           id: String(profile.id),
           url: profile.url,
@@ -123,6 +124,12 @@ export default async function DashboardPage() {
         }))}
       />
 
+      <div className="h-[50dvh] pt-36 flex flex-col items-center justify-center">
+        <span className="text-2xl font-medium mb-6 text-black-600 sm:text-lg md:text-left dark:text-neutral-300">
+          รวมนักเรียนจากจังหวัด
+        </span>
+        <MorphingText className=" font-medium" texts={["ราชบุรี", "สุพรรณบุรี", "ประจวบคีรีขันธ์", "กาญจนบุรี"]} />
+      </div>
       {/* Card grid 
       <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
         <ActionCard
